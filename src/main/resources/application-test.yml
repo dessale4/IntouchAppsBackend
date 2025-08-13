@@ -19,7 +19,7 @@ spring:
     generate-ddl: true
     hibernate:
       ddl-auto:  '${JPA_HIBERNATE_DDL_AUTO:create-drop}' #validate for validating create-drop for dev and update for prod
-    show-sql: true #false better
+    show-sql: false #false better
     properties:
       hibernate:
         default_schema: '${SPRING_DATASOURCE_DEFAULT_SCHEMA:intouchappsschema}' #please keep schema name as lower case
@@ -48,10 +48,14 @@ application:
   security:
     jwt:
       secret_key: '${APPLICATION_SECURITY_JWT_SECRET_KEY:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}'
-      expiration:  86400000 #   a day
-#      expiration:  5000 #  for testing
+      expiration:  '{APPLICATION_SECURITY_JWT_SECRET_KEY_EXPIRATION:86400000}' #   a day
+#      expiration:  60000 #  1 minute for testing
+#      expiration: 5000 #  5 seconds for testing
       refresh_token:
-        expiration: 604800000 # 7 days
+        secret_key: '${APPLICATION_SECURITY_JWT_REFRESH_SECRET_KEY:404E635266556A586E3272357538786876862F413F4428472B4B6250645367566B5970}'
+        expiration: '{APPLICATION_SECURITY_JWT_REFRESH_SECRET_KEY_EXPIRATION:604800000}' # 7 days
+#        expiration:  60000 #  1 minute for testing
+#        expiration: 10000 # 10 seconds for test
   encryption:
     jasyptEncryptionAlgorithm: '${JASYPT_ENCRYPTION_ALGORITHM:PBEWithMD5AndDES}'
     jasyptEncryptionPassword: '${JASYPT_ENCRYPTION_PASSWORD:jasyptPassword}'

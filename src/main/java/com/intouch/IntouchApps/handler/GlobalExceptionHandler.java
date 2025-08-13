@@ -77,7 +77,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ExceptionResponse> handleException(AccessDeniedException exp){
         return ResponseEntity
-                .status(UNAUTHORIZED)
+                .status(FORBIDDEN)
                 .body(
                         ExceptionResponse.builder()
                                 .businessErrorCode(ACCESS_DENIED_EXCEPTION.getCode())

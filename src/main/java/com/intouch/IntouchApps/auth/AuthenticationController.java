@@ -4,10 +4,9 @@ import com.intouch.IntouchApps.handler.AccountNotActivatedException;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,12 +32,10 @@ public class AuthenticationController {
     @PostMapping("/authenticate")
     public ResponseEntity<AuthenticationResponse> authenticate(
             @RequestBody @Valid AuthenticationRequest request
-//            ,HttpServletRequest httpRequest
+            , HttpServletResponse response
     ) throws AccountNotActivatedException, MessagingException, ParseException {
-//        httpRequest.getSession().setAttribute("userPreferences", "preferences");
-        return ResponseEntity.ok(service.authenticate(request));
+        return ResponseEntity.ok(service.authenticate(request, response));
     }
-
     @GetMapping("/activate-account")
     public String confirmEmail(
             @RequestParam String token,  @RequestParam String userEmail
@@ -52,7 +49,6 @@ public class AuthenticationController {
     ) throws MessagingException, AccountNotActivatedException {
        service.confirmEmailRequest(userEmail, emailReason);
     }
-
     @PostMapping("/resetPassword")
     public void resetPassword(
             @RequestBody @Valid AuthenticationRequest request
@@ -72,4 +68,12 @@ public class AuthenticationController {
     ) throws MessagingException {
         service.validatePasswordResetCode(token);
     }
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+        return service.logout(request, response);
+    }
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+         return ResponseEntity.ok( service.getJwtRefreshToken(request, response));
+        }
 }

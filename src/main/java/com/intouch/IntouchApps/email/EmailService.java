@@ -28,8 +28,6 @@ public class EmailService {
     @Async
     public void sendEmail( AppEmail appEmail) throws MessagingException , SendFailedException {
         String templateName;
-        System.out.println("=====------=======");
-        System.out.println(appEmail.getEmailTemplate().name().toLowerCase());
         if(appEmail.getEmailTemplate() == null){
             templateName = "confirm_email";
         }else {

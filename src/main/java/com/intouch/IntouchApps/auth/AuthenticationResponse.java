@@ -13,6 +13,5 @@ import org.springframework.core.env.Environment;
 @Builder
 public class AuthenticationResponse {
     private String jwtToken;
-    private UserDTO userDTO;
-
+    private String jwtRefreshToken;
 }

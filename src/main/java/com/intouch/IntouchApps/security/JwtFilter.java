@@ -3,6 +3,7 @@ package com.intouch.IntouchApps.security;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.util.Arrays;
+
 import io.jsonwebtoken.security.SignatureException;
 
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -37,39 +41,55 @@ public class JwtFilter extends OncePerRequestFilter {
     @Autowired
     @Qualifier("handlerExceptionResolver")
     private HandlerExceptionResolver exceptionResolver;
+
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        if(request.getServletPath().contains("/auth/")){
+
+        if (request.getServletPath().contains("/auth/")) {
             log.info("authentication is not required");
             filterChain.doFilter(request, response);
             return;
         }
+
         final String authHeader = request.getHeader(AUTHORIZATION);
         final String jwt;
         final String userEmail;
-        try{
-            if(authHeader == null || !authHeader.startsWith("Bearer ")){
+        try {
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                jwt = authHeader.substring(7);
+            } else if (request.getCookies() != null) {
+                jwt = Arrays.stream(request.getCookies())
+                        .filter(c -> c.getName().equals("jwt"))
+                        .findFirst()
+                        .map(Cookie::getValue)
+                        .orElse(null);
+            } else {
                 log.info("not a jwt Auth");
                 filterChain.doFilter(request, response);
                 return;
             }
-            jwt = authHeader.substring(7);
-
-            userEmail = jwtService.extractUsername(jwt);
-            if(userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null){
+            userEmail = jwtService.extractUsername(jwt, false);
+            if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities()
-                );
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                if (jwtService.isTokenValid(jwt, userDetails, false)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities()
+                    );
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    log.info("not a valid jwt");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
             }
             filterChain.doFilter(request, response);
-        }catch (ExpiredJwtException | SignatureException ex){
+        } catch (ExpiredJwtException | SignatureException | ParseException ex) {
             exceptionResolver.resolveException(request, response, null, ex);
         }
     }
