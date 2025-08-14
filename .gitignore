@@ -9,6 +9,8 @@ referrenceNotes.txt
 src/main/java/com/intouch/IntouchApps/utils/JasyptEncryptionUtil.java
 src/main/java/com/intouch/IntouchApps/utils/UserAndRolesUtil.java
 src/main/resources/application.*
+src/main/resources/application-test.yml
+src/main/resources/application-dev.yml
 src/main/resources/bootstrap.yml
 
 target/
