@@ -38,7 +38,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .jwtRefreshToken(token)
-                .expiresAt(AppDateUtil.getCurrentUTCLocalDateTime().plusMinutes(refreshTokenDurationMs/1000))
+                .expiresAt(AppDateUtil.getCurrentUTCLocalDateTime().plusNanos(refreshTokenDurationMs*1000000))
                 .revoked(false)
                 .build();
         return refreshTokenRepository.save(refreshToken);

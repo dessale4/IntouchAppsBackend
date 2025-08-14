@@ -48,12 +48,12 @@ application:
   security:
     jwt:
       secret_key: '${APPLICATION_SECURITY_JWT_SECRET_KEY:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}'
-      expiration:  '{APPLICATION_SECURITY_JWT_SECRET_KEY_EXPIRATION:86400000}' #   a day
+      expiration:  '${APPLICATION_SECURITY_JWT_SECRET_KEY_EXPIRATION:86400000}' #   a day
 #      expiration:  60000 #  1 minute for testing
 #      expiration: 5000 #  5 seconds for testing
       refresh_token:
         secret_key: '${APPLICATION_SECURITY_JWT_REFRESH_SECRET_KEY:404E635266556A586E3272357538786876862F413F4428472B4B6250645367566B5970}'
-        expiration: '{APPLICATION_SECURITY_JWT_REFRESH_SECRET_KEY_EXPIRATION:604800000}' # 7 days
+        expiration: '${APPLICATION_SECURITY_JWT_REFRESH_SECRET_KEY_EXPIRATION:259200000}' # 3 days
 #        expiration:  60000 #  1 minute for testing
 #        expiration: 10000 # 10 seconds for test
   encryption:
