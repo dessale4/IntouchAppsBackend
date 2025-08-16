@@ -150,9 +150,9 @@ public class AuthenticationService {
         var user = (User) auth.getPrincipal();//take care
         claims.put("fullName", user.fullName());
         var jwtAccessToken = jwtService.generateToken(claims, user, false);
-        RefreshToken storedRefreshToken = refreshTokenService.findByUserEmail(encryptedEmail);
-        if (storedRefreshToken != null) {
-            refreshTokenService.deleteByUserEmail(storedRefreshToken.getUser().getEmail());
+        List<RefreshToken> storedRefreshTokens = refreshTokenService.findByUserEmail(encryptedEmail);
+        if (storedRefreshTokens.size() > 0) {
+            refreshTokenService.deleteExistingUserRefreshTokens(storedRefreshTokens);
         }
         var refreshToken = refreshTokenService.createRefreshToken(user).getJwtRefreshToken();
         if (!isSSLEnabled) {
@@ -174,6 +174,8 @@ public class AuthenticationService {
             refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
             response.addCookie(refreshCookie);
         }
+//        System.out.println("JWT during generation : " + jwtAccessToken);
+//        System.out.println("JWT refreshtoken during generation : " + refreshToken);
         return AuthenticationResponse.builder()
                 .jwtToken(jwtAccessToken)
                 .jwtRefreshToken(refreshToken)
@@ -327,7 +329,7 @@ public class AuthenticationService {
         String refreshToken = null;
         if (request.getCookies() != null) {
             refreshToken = getCookieNameValueFromRequest("refreshToken", request);
-            deleteExistingJwtRefreshToken(refreshToken);
+            // in any way remove refreshtoken from user browser cookie
             if (!isSSLEnabled) {
                 // For Web if using http not https
                 ResponseCookie clear = ResponseCookie.from("refreshToken", "")
@@ -354,12 +356,13 @@ public class AuthenticationService {
             if (headerToken != null && headerToken.startsWith("Bearer ")) {
                 refreshToken = headerToken.substring(7);
             }
+        }
+        if(refreshToken != null){
             deleteExistingJwtRefreshToken(refreshToken);
         }
         SecurityContextHolder.getContext().setAuthentication(null);
         return ResponseEntity.ok(Map.of("message", "Logged out"));
     }
-
     private static String getCookieNameValueFromRequest(String cookieName, HttpServletRequest request) {
         String refreshToken;
         refreshToken = Arrays.stream(request.getCookies())
@@ -372,10 +375,18 @@ public class AuthenticationService {
 
     private void deleteExistingJwtRefreshToken(String refreshToken) throws ParseException {
         if (refreshToken != null) {
+            try {
+//                delete refreshtokens of the user
+                String userEmail = jwtService.extractUsername(refreshToken, true);
+                refreshTokenService.deleteByUserEmail(userEmail);
+            }catch (Exception ex){
+//                try to delete by token
+                refreshTokenService.deleteByToken(refreshToken);
+            }
             //Delete refreshToken
 //            RefreshToken storedRefreshToken = refreshTokenService.findByToken(refreshToken);
 //            refreshTokenService.deleteByUserEmail(storedRefreshToken.getUser().getEmail());
-            refreshTokenService.deleteByToken(refreshToken);
+
         } else {
             throw new AccessDeniedException("Authentication Failed");
         }

@@ -20,7 +20,6 @@ public class AppUsersController {
     public List<AccountDTO> getUserNames(){
         return appUsersService.getAppUsernames();
     }
-
     @GetMapping("/loggedUser")
     public ResponseEntity<?> me(HttpServletRequest request) {
         UserDTO user = appUsersService.loadUserByUsername(request);// from cookie

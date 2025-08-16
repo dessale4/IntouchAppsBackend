@@ -23,6 +23,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.Arrays;
 
@@ -48,7 +49,7 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-
+//        System.out.println("current ServletPath =>" + request.getServletPath());
         if (request.getServletPath().contains("/auth/")) {
             log.info("authentication is not required");
             filterChain.doFilter(request, response);
@@ -71,7 +72,12 @@ public class JwtFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
                 return;
             }
+//            System.out.println("RequestURL : " + request.getRequestURL());
+//            byte[] bytes = request.getHeader("Authorization").getBytes(StandardCharsets.UTF_8);
+//            System.out.println(Arrays.toString(bytes));
+//            System.out.println("JWT during request : " + jwt);
             userEmail = jwtService.extractUsername(jwt, false);
+//            System.out.println("userEmail ===>" + userEmail);
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
 

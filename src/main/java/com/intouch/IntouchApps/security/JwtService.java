@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.text.ParseException;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,8 +39,9 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token, boolean isRefreshJwtToken) {
+        Key signInKey = getSignInKey(isRefreshJwtToken);
         return Jwts.parser()
-                .setSigningKey(getSignInKey(isRefreshJwtToken))
+                .setSigningKey(signInKey)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -48,8 +50,8 @@ public class JwtService {
     public String generateToken(UserDetails userDetails, boolean isRefreshJwtToken) throws ParseException {
         return generateToken(new HashMap<>(), userDetails, isRefreshJwtToken);
     }
-
     public String generateToken(Map<String, Object> claims, UserDetails userDetails, boolean isRefreshJwtToken) throws ParseException {
+//        System.out.println("generateToken called");
         return buildToken(claims, userDetails
                 , isRefreshJwtToken
         );
@@ -97,7 +99,11 @@ public class JwtService {
 
     private Key getSignInKey(boolean isRefreshJwtToken) {
         String jwtSecreteKey = isRefreshJwtToken ? refreshTokenSecretKey : secretKey;
+//        System.out.println("isRefreshJwtToken : jwtSecreteKey =>" + isRefreshJwtToken + " : " + jwtSecreteKey);
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecreteKey);
+        // Print the raw key bytes (e.g., Base64 encoded)
+//        String encodedKeyBytes = Base64.getEncoder().encodeToString(keyBytes);
+//        System.out.println("Raw Key Bytes (Base64): " + encodedKeyBytes);
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
