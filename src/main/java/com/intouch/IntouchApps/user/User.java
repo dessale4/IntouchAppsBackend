@@ -14,7 +14,9 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
@@ -31,7 +33,7 @@ public class User implements UserDetails, Principal {
     private Integer id;
     private String firstName;
     private String lastName;
-    private LocalDate dateOfBirth;
+//    private LocalDate dateOfBirth;
     @Column(unique = true)
 
     private String email;
@@ -47,7 +49,7 @@ public class User implements UserDetails, Principal {
     @Column(nullable = false)
     private LocalDateTime lastModifiedDate;
     @ManyToMany(fetch = FetchType.EAGER)
-    private List<Role> roles;
+    private Set<Role> roles = new HashSet<>();//No role at first
     private boolean isSubscribed;
     private LocalDateTime subscriptionEndDate;
     @Override
@@ -86,6 +88,11 @@ public class User implements UserDetails, Principal {
     }
     public String fullName(){
         return firstName + " " + lastName;
+    }
+    public void addRole(Role role){
+        if(role.getName().equals("") || role.getName() == null)
+            throw new IllegalArgumentException("Not allowed user role");
+        getRoles().add(role);
     }
     @Override
     public String toString() {

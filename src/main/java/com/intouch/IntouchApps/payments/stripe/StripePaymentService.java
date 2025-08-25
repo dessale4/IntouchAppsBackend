@@ -30,11 +30,11 @@ public class StripePaymentService {
     private final UserRepository userRepository;
     private final AppPaymentRepository appPaymentRepository;
     private final StandardPBEStringEncryptor standardPBEStringEncryptor;
-    @Value("${application.stripe.secret-key}")
+    @Value("${application.payment.stripe.secret-key}")
     private String secretKey;
-    @Value("${application.stripe.cancelUrl}")
+    @Value("${application.payment.stripe.cancelUrl}")
     private String cancelUrl;
-    @Value("${application.stripe.successUrl}")
+    @Value("${application.payment.stripe.successUrl}")
     private  String  successUrl;
     public StripePaymentResponse createStripePayment(StripePaymentRequest stripePaymentRequest, HttpServletRequest httpServletRequest){
         User payingUser = userRepository.findByEmail(httpServletRequest.getUserPrincipal().getName()).orElseThrow(()->new RuntimeException("Account not found with the provided information: " + standardPBEStringEncryptor.decrypt(httpServletRequest.getUserPrincipal().getName())));

@@ -7,11 +7,11 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class PaypalConfig {
-    @Value("${application.paypal.client_id}")
+    @Value("${application.payment.paypal.client_id}")
     private String clientId;
-    @Value("${application.paypal.client_secret}")
+    @Value("${application.payment.paypal.client_secret}")
     private String clientSecret;
-    @Value("${application.paypal.mode}")
+    @Value("${application.payment.paypal.mode}")
     private String mode;
     @Bean
     public APIContext apiContext(){

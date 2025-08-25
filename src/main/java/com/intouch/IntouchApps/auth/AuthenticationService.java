@@ -75,10 +75,11 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .accountLocked(false)
                 .enabled(false)
-                .roles(List.of(userRole))
+//                .roles(List.of(userRole))
                 .createdDate(AppDateUtil.getCurrentUTCLocalDateTime())
                 .lastModifiedDate(AppDateUtil.getCurrentUTCLocalDateTime())
                 .build();
+        user.addRole(userRole);
         user = userRepository.save(user);
         sendValidationEmail(user, validateEmail);
     }
@@ -132,7 +133,6 @@ public class AuthenticationService {
         }
         return codeBuilder.toString();
     }
-
     public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) throws AccountNotActivatedException, MessagingException, ParseException {
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
         User storedUser = userRepository.findByEmail(encryptedEmail).orElseThrow(() -> new UsernameNotFoundException("No account with email " + request.getEmail()));
@@ -357,12 +357,13 @@ public class AuthenticationService {
                 refreshToken = headerToken.substring(7);
             }
         }
-        if(refreshToken != null){
+        if (refreshToken != null) {
             deleteExistingJwtRefreshToken(refreshToken);
         }
         SecurityContextHolder.getContext().setAuthentication(null);
         return ResponseEntity.ok(Map.of("message", "Logged out"));
     }
+
     private static String getCookieNameValueFromRequest(String cookieName, HttpServletRequest request) {
         String refreshToken;
         refreshToken = Arrays.stream(request.getCookies())
@@ -379,7 +380,7 @@ public class AuthenticationService {
 //                delete refreshtokens of the user
                 String userEmail = jwtService.extractUsername(refreshToken, true);
                 refreshTokenService.deleteByUserEmail(userEmail);
-            }catch (Exception ex){
+            } catch (Exception ex) {
 //                try to delete by token
                 refreshTokenService.deleteByToken(refreshToken);
             }
@@ -390,5 +391,23 @@ public class AuthenticationService {
         } else {
             throw new AccessDeniedException("Authentication Failed");
         }
+    }
+    public boolean doesUserExist(String userIdentity){
+        User storedUser;
+        if(userIdentity.contains("@")){
+            storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(userIdentity.toLowerCase())).orElseThrow(()->new RuntimeException("Account not found with the provided information=> " + userIdentity));
+        }else{
+            storedUser = userRepository.findByPublicUserName(userIdentity.toLowerCase()).orElseThrow(()->new RuntimeException("Account not found with the provided information=> " + userIdentity));
+        }
+        return storedUser == null ? false:true;
+    }
+    public User existingAppUser(String userIdentity){
+        User storedUser;
+        if(userIdentity.contains("@")){
+            storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(userIdentity.toLowerCase())).orElseThrow(()->new RuntimeException("Account not found with the provided information=> " + userIdentity));
+        }else{
+            storedUser = userRepository.findByPublicUserName(userIdentity.toLowerCase()).orElseThrow(()->new RuntimeException("Account not found with the provided information=> " + userIdentity));
+        }
+        return storedUser;
     }
 }

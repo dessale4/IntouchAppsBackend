@@ -56,15 +56,19 @@ public class IntouchAppsApplication {
     public CommandLineRunner runner(RoleRepository roleRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, KeyFamilyRepository keyFamilyRepository, StandardPBEStringEncryptor standardPBEStringEncryptor) throws ParseException {
 
         return args -> {
-            List<Role> roles = null;
-            if (roleRepository.findAll().size() == 0) {
+            final List<Role> roles;
+            List<Role> savedRoles = roleRepository.findAll();
+            if (savedRoles.size() == 0) {
 
                 roles = roleRepository.saveAll(UserAndRolesUtil.initRoles);
+            }else{
+                roles = savedRoles;
             }
             if (userRepository.findAll().size() == 0) {
 
                 List<User> initUsers = UserAndRolesUtil.initUsers.stream()
                         .map(u->{
+                            u.setRoles(UserAndRolesUtil.setUserRoles(roles,u.getEmail()));
                             u.setPassword(passwordEncoder.encode(u.getPassword()));
                             u.setEmail(standardPBEStringEncryptor.encrypt(u.getEmail().toLowerCase()));
                             return u;

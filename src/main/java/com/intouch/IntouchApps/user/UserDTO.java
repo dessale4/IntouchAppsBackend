@@ -4,7 +4,7 @@ import com.intouch.IntouchApps.role.Role;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -17,8 +17,12 @@ public class UserDTO {
     private String email;
     private boolean accountLocked;
     private boolean enabled;
-    private List<Role> roles;
+    //    private Set<Role> roles;
+    private Set<String> roles;
+    //    private Set<AppAccessDTO> appAccess;
+    private Set<String> appAccesses;
     private boolean isSubscribed;
     private LocalDateTime subscriptionEndDate;
     private String username;
+    private Boolean paymentEnabled;
 }

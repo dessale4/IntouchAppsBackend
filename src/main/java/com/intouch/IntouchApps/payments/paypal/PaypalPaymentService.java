@@ -33,9 +33,9 @@ public class PaypalPaymentService {
     private final UserRepository userRepository;
     private final AppPaymentRepository appPaymentRepository;
     private final StandardPBEStringEncryptor standardPBEStringEncryptor;
-    @Value("${application.paypal.cancelUrl}")
+    @Value("${application.payment.paypal.cancelUrl}")
     private String cancelUrl;
-    @Value("${application.paypal.successUrl}")
+    @Value("${application.payment.paypal.successUrl}")
     private  String  successUrl;
     public PaypalPaymentResponse createPayment(
             PaypalPaymentRequest paypalPaymentRequest,
