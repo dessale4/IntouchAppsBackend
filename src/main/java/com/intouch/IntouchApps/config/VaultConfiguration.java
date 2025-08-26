@@ -7,6 +7,9 @@
 //@Configuration
 //@Data
 ////to group specific properties if needed
+
+import org.springframework.cloud.context.config.annotation.RefreshScope;
+//@RefreshScope
 //public class VaultConfiguration {
 //    @Value("${DB_URL}")
 //    public String DB_URL;

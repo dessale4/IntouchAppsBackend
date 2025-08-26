@@ -1,11 +1,13 @@
 HELP.md
 hcpKey.txt
+config_db_schema.txt
 docker-compose.yml
 Dockerfile
 dockerCommand.png
 dockerCommands.txt
 hcpSavedProperties.txt
 referrenceNotes.txt
+src/main/java/com/intouch/IntouchApps/adminAccess
 src/main/java/com/intouch/IntouchApps/utils/JasyptEncryptionUtil.java
 src/main/java/com/intouch/IntouchApps/utils/UserAndRolesUtil.java
 src/main/resources/application.*

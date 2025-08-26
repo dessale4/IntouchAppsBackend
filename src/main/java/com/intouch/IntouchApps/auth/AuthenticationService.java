@@ -18,6 +18,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +42,7 @@ import static org.springframework.http.HttpHeaders.SET_COOKIE;
 
 @Service
 @RequiredArgsConstructor
+@RefreshScope
 public class AuthenticationService {
     private final StandardPBEStringEncryptor standardPBEStringEncryptor;
     private final RoleRepository roleRepository;

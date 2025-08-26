@@ -2,10 +2,12 @@ package com.intouch.IntouchApps.config;
 
 import com.paypal.base.rest.APIContext;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@RefreshScope
 public class PaypalConfig {
     @Value("${application.payment.paypal.client_id}")
     private String clientId;

@@ -6,6 +6,7 @@ import com.intouch.IntouchApps.utils.AppObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -19,6 +20,7 @@ import java.io.InputStream;
 
 @Service
 @RequiredArgsConstructor
+@RefreshScope
 public class AWSFileUploadService {
     @Value("${application.aws.s3.access_key}")
     private String awsS3AccessKey;

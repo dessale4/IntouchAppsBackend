@@ -8,12 +8,14 @@ import com.intouch.IntouchApps.utils.AppDateUtil;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 @Service
 @RequiredArgsConstructor
+@RefreshScope
 public class RevenueCatService {
     private final UserEntitlementRepository userEntitlementRepository;
     private final RestTemplate restTemplate;
