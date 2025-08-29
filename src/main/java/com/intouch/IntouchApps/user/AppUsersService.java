@@ -5,6 +5,7 @@ import com.intouch.IntouchApps.utils.AppDateUtil;
 import com.intouch.IntouchApps.utils.UserAndRolesUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
@@ -24,6 +25,7 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 @RequiredArgsConstructor
 @Slf4j
 @RefreshScope
+@Transactional
 public class AppUsersService {
     private final UserRepository userRepository;
     private final StandardPBEStringEncryptor standardPBEStringEncryptor;

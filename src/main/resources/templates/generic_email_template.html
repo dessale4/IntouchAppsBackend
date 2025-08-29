@@ -43,7 +43,7 @@
 <div class="container">
     <h1><span th:text="${email_title}"></span></h1>
     <p class="greeting" th:text="'Hello ' + ${username} + ','"></p>
-    <p>Thank you for choosing this app! Please use the following confirmation code to <span th:text="${email_message}"></span></p>
+    <p>Thank you for choosing this app! Please use the following confirmation code for <span th:text="${email_message}"></span></p>
     <div class="activation-code"><span th:text="${activation_code}"></span></div>
 <!--    <div class="activation-link">-->
 <!--        <a th:href="${confirmation_url}" target="_blank"><span th:text="${confirmation_text}"></span></a>-->

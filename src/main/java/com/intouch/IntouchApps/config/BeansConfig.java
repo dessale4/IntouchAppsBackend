@@ -58,8 +58,8 @@ public class BeansConfig {
                 ORIGIN,
                 CONTENT_TYPE,
                 ACCEPT,
-                AUTHORIZATION
-
+                AUTHORIZATION,
+                "CONFIG_CODE"
         ));
         config.setAllowedMethods(Arrays.asList(
                 "GET",

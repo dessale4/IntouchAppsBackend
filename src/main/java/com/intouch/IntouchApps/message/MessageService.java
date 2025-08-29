@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @RefreshScope
 @Slf4j
+@Transactional
 public class MessageService {
     @Value("${application.messages.contactus.email}")
     private String supportEmail;

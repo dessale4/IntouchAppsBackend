@@ -43,6 +43,7 @@ import static org.springframework.http.HttpHeaders.SET_COOKIE;
 @Service
 @RequiredArgsConstructor
 @RefreshScope
+@Transactional
 public class AuthenticationService {
     private final StandardPBEStringEncryptor standardPBEStringEncryptor;
     private final RoleRepository roleRepository;
@@ -52,6 +53,9 @@ public class AuthenticationService {
     private final EmailService emailService;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+
+    private final RefreshTokenRepository refreshTokenRepository;
+
     @Value("${application.mailing.backend.email_validation_key}")
     private String validateEmail;
     @Value("${server.ssl.enabled:false}")
@@ -62,6 +66,8 @@ public class AuthenticationService {
     private String resetPassword;
     @Value("${application.mailing.frontend.activation_url}")
     private String activationUrl;
+    @Value("${application.mailing.backend.app_config_key}")
+    private String appConfig;
     private final RefreshTokenService refreshTokenService;
 
     public void register(RegistrationRequest request) throws MessagingException {
@@ -135,6 +141,7 @@ public class AuthenticationService {
         }
         return codeBuilder.toString();
     }
+
     public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) throws AccountNotActivatedException, MessagingException, ParseException {
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
         User storedUser = userRepository.findByEmail(encryptedEmail).orElseThrow(() -> new UsernameNotFoundException("No account with email " + request.getEmail()));
@@ -221,12 +228,16 @@ public class AuthenticationService {
             }
             sendPasswordResetToken(storedUser);
         }
-        if (emailReason.equals(validateEmail)) {
-            sendValidationEmail(storedUser, emailReason);
-        }
-        if (emailReason.equals(deleteAccountEmail)) {
-            sendValidationEmail(storedUser, emailReason);
-        }
+        sendValidationEmail(storedUser, emailReason);
+//        if (emailReason.equals(validateEmail)) {
+//            sendValidationEmail(storedUser, emailReason);
+//        }
+//        if (emailReason.equals(deleteAccountEmail)) {
+//            sendValidationEmail(storedUser, emailReason);
+//        }
+//        if (emailReason.equals(appConfig)) {
+//            sendValidationEmail(storedUser, emailReason);
+//        }
     }
 
     private void sendPasswordResetToken(User storedUser) throws MessagingException {
@@ -276,6 +287,7 @@ public class AuthenticationService {
         }
         User savedUser = userRepository.findByEmail(principal.getName()).orElseThrow(() -> new RuntimeException("Account not found"));
         List<Token> userTokenList = tokenRepository.findByUserEmail(principal.getName());
+        refreshTokenRepository.deleteByUserEmail(principal.getName());
         tokenRepository.deleteAll(userTokenList);
         userRepository.delete(savedUser);
     }
@@ -296,6 +308,24 @@ public class AuthenticationService {
         }
         savedToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
         tokenRepository.save(savedToken);
+    }
+    public boolean validateAppConfigCode(String token, Principal principal) {
+        String authName = principal.getName();
+        Token savedToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid token"));
+        User user = savedToken.getUser();
+        if (!user.getEmail().equals(authName)) {
+            throw new RuntimeException("Operation denied");
+        }
+        if (!savedToken.getCreationReason().equals(appConfig)) {
+            throw new RuntimeException(savedToken.getToken() + " is not an app config token");
+        }
+        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedToken.getExpiresAt())) {
+            throw new RuntimeException("App Config token has been already expired.");
+        }
+        savedToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
+        tokenRepository.save(savedToken);
+        return true;
     }
 
     public Object getJwtRefreshToken(HttpServletRequest request, HttpServletResponse response) throws ParseException {
@@ -394,21 +424,23 @@ public class AuthenticationService {
             throw new AccessDeniedException("Authentication Failed");
         }
     }
-    public boolean doesUserExist(String userIdentity){
+
+    public boolean doesUserExist(String userIdentity) {
         User storedUser;
-        if(userIdentity.contains("@")){
-            storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(userIdentity.toLowerCase())).orElseThrow(()->new RuntimeException("Account not found with the provided information=> " + userIdentity));
-        }else{
-            storedUser = userRepository.findByPublicUserName(userIdentity.toLowerCase()).orElseThrow(()->new RuntimeException("Account not found with the provided information=> " + userIdentity));
+        if (userIdentity.contains("@")) {
+            storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(userIdentity.toLowerCase())).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
+        } else {
+            storedUser = userRepository.findByPublicUserName(userIdentity.toLowerCase()).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
         }
-        return storedUser == null ? false:true;
+        return storedUser == null ? false : true;
     }
-    public User existingAppUser(String userIdentity){
+
+    public User existingAppUser(String userIdentity) {
         User storedUser;
-        if(userIdentity.contains("@")){
-            storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(userIdentity.toLowerCase())).orElseThrow(()->new RuntimeException("Account not found with the provided information=> " + userIdentity));
-        }else{
-            storedUser = userRepository.findByPublicUserName(userIdentity.toLowerCase()).orElseThrow(()->new RuntimeException("Account not found with the provided information=> " + userIdentity));
+        if (userIdentity.contains("@")) {
+            storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(userIdentity.toLowerCase())).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
+        } else {
+            storedUser = userRepository.findByPublicUserName(userIdentity.toLowerCase()).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
         }
         return storedUser;
     }

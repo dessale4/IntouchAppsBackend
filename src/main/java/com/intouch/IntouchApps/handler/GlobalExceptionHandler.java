@@ -1,6 +1,7 @@
 package com.intouch.IntouchApps.handler;
 
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.mail.MessagingException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -8,7 +9,6 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.security.SignatureException;
+//import java.security.SignatureException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -34,18 +34,6 @@ public class GlobalExceptionHandler {
                         ExceptionResponse.builder()
                                 .businessErrorCode(ACCOUNT_LOCKED.getCode())
                                 .businessErrorDescription(ACCOUNT_LOCKED.getDescription())
-                                .error(exp.getMessage())
-                                .build()
-                );
-    }
-    @ExceptionHandler(DisabledException.class)
-    public ResponseEntity<ExceptionResponse> handleException(DisabledException exp){
-        return ResponseEntity
-                .status(UNAUTHORIZED)
-                .body(
-                        ExceptionResponse.builder()
-                                .businessErrorCode(ACCOUNT_DISABLED.getCode())
-                                .businessErrorDescription(ACCOUNT_DISABLED.getDescription())
                                 .error(exp.getMessage())
                                 .build()
                 );

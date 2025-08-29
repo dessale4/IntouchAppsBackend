@@ -3,6 +3,7 @@ package com.intouch.IntouchApps.fileUpload;
 import com.intouch.IntouchApps.appkeys.*;
 import com.intouch.IntouchApps.handler.AWSFileUploadException;
 import com.intouch.IntouchApps.utils.AppObjectMapper;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,7 @@ import java.io.InputStream;
 @Service
 @RequiredArgsConstructor
 @RefreshScope
+@Transactional
 public class AWSFileUploadService {
     @Value("${application.aws.s3.access_key}")
     private String awsS3AccessKey;

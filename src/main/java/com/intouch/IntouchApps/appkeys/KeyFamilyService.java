@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class KeyFamilyService {
     private final KeyFamilyRepository keyFamilyRepository;
     private final AppObjectMapper appObjectMapper;

@@ -1,6 +1,7 @@
 package com.intouch.IntouchApps.appkeys;
 
 import com.intouch.IntouchApps.utils.AppObjectMapper;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -9,6 +10,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class KeyFamilyAudioService {
     private final KeyFamilyAudioRepository keyFamilyAudioRepository;
     private final KeyFamilyRepository keyFamilyRepository;

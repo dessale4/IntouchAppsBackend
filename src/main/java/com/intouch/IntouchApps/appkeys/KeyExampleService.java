@@ -8,6 +8,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class KeyExampleService {
     private final KeyExampleRepository keyExampleRepository;
     private final AppKeyRepository appKeyRepository;

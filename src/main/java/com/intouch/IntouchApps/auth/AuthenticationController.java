@@ -62,12 +62,6 @@ public class AuthenticationController {
     ) throws MessagingException {
         service.validatePasswordResetCode(token);
     }
-    @GetMapping("/validate-account-delete-code")
-    public void validateAccountDeleteCode(
-            @RequestParam String token
-    ) throws MessagingException {
-        service.validatePasswordResetCode(token);
-    }
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) throws ParseException {
         return service.logout(request, response);

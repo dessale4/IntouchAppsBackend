@@ -2,11 +2,13 @@ package com.intouch.IntouchApps.payments.mobile_store;
 
 import com.intouch.IntouchApps.user.SubscriptionService;
 import com.intouch.IntouchApps.utils.AppDateUtil;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class EntitlementService {
     private final UserEntitlementRepository userEntitlementRepository;
     private final SubscriptionService subscriptionService;
