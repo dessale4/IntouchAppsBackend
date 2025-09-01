@@ -35,7 +35,6 @@ public class User implements UserDetails, Principal {
     private String lastName;
 //    private LocalDate dateOfBirth;
     @Column(unique = true)
-
     private String email;
     @Column(unique = true)
     private String publicUserName;
@@ -92,7 +91,7 @@ public class User implements UserDetails, Principal {
     public void addRole(Role role){
         if(role.getName().equals("") || role.getName() == null)
             throw new IllegalArgumentException("Not allowed user role");
-        getRoles().add(role);
+       getRoles().add(role);
     }
     @Override
     public String toString() {

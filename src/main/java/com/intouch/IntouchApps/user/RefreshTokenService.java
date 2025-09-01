@@ -69,7 +69,9 @@ public class RefreshTokenService {
     public boolean isTokenValid(RefreshToken token) {
         return !token.isRevoked() && token.getExpiresAt().isAfter(AppDateUtil.getCurrentUTCLocalDateTime());
     }
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void deleteExistingUserRefreshTokens(List<RefreshToken> storedRefreshTokens) {
         refreshTokenRepository.deleteAll(storedRefreshTokens);
+        refreshTokenRepository.flush(); // forces SQL execution immediately
     }
 }

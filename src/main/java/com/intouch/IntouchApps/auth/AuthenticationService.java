@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -74,6 +75,14 @@ public class AuthenticationService {
         var userRole = roleRepository.findByName("USER")
                 //todo - apply best exception handling approach
                 .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
+        Optional<User> storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(request.getEmail()));
+        if(storedUser.isPresent()){
+            throw new RuntimeException("An account with email " + request.getEmail() + " Already Exists");
+        }
+        Optional<User> storedUser2 = userRepository.findByPublicUserName(request.getUserName());
+        if(storedUser2.isPresent()){
+            throw new RuntimeException("An account with username " + request.getUserName() + " Already Exists");
+        }
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
         var user = User.builder()
                 .firstName(request.getFirstName())
@@ -83,11 +92,11 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .accountLocked(false)
                 .enabled(false)
-//                .roles(List.of(userRole))
+                .roles(Set.of(userRole))
                 .createdDate(AppDateUtil.getCurrentUTCLocalDateTime())
                 .lastModifiedDate(AppDateUtil.getCurrentUTCLocalDateTime())
                 .build();
-        user.addRole(userRole);
+//        user.addRole(userRole);
         user = userRepository.save(user);
         sendValidationEmail(user, validateEmail);
     }
@@ -141,7 +150,7 @@ public class AuthenticationService {
         }
         return codeBuilder.toString();
     }
-
+@Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) throws AccountNotActivatedException, MessagingException, ParseException {
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
         User storedUser = userRepository.findByEmail(encryptedEmail).orElseThrow(() -> new UsernameNotFoundException("No account with email " + request.getEmail()));
@@ -162,6 +171,7 @@ public class AuthenticationService {
         List<RefreshToken> storedRefreshTokens = refreshTokenService.findByUserEmail(encryptedEmail);
         if (storedRefreshTokens.size() > 0) {
             refreshTokenService.deleteExistingUserRefreshTokens(storedRefreshTokens);
+//            throw new RuntimeException("You might be logged from a different device. Please logout of that device first.");
         }
         var refreshToken = refreshTokenService.createRefreshToken(user).getJwtRefreshToken();
         if (!isSSLEnabled) {
@@ -201,7 +211,7 @@ public class AuthenticationService {
             throw new RuntimeException(savedToken.getToken() + " is not email validation token");
         }
         if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedToken.getExpiresAt())) {
-            //check reason
+            //users need to validate their email with unexpired token/code
             sendValidationEmail(savedToken.getUser(), validateEmail);
             throw new RuntimeException("Activation token has expired. A new token has been emailed to you");
         }
@@ -226,7 +236,7 @@ public class AuthenticationService {
                 sendValidationEmail(storedUser, validateEmail);
                 throw new AccountNotActivatedException("Please check your email: " + standardPBEStringEncryptor.decrypt(storedUser.getEmail()) + " You need to activate your account before trying to request a code");
             }
-            sendPasswordResetToken(storedUser);
+//            sendPasswordResetToken(storedUser);
         }
         sendValidationEmail(storedUser, emailReason);
 //        if (emailReason.equals(validateEmail)) {
@@ -240,22 +250,22 @@ public class AuthenticationService {
 //        }
     }
 
-    private void sendPasswordResetToken(User storedUser) throws MessagingException {
-        String passwordResetToken = generateAndSaveActivationToken(storedUser, resetPassword);
-        String decryptedEmail = standardPBEStringEncryptor.decrypt(storedUser.getEmail());
-        AppEmail appEmail = AppEmail.builder()
-                .to(decryptedEmail)
-                .username(storedUser.fullName())
-                .emailTemplate(GENERIC_EMAIL_TEMPLATE)
-                .confirmationUrl(activationUrl)
-                .activationCode(passwordResetToken)
-                .subject("Change Password")
-                .messageTitle("Reset Password")
-                .confirmationText("Reset your password")
-                .message("change your password:")
-                .build();
-        emailService.sendEmail(appEmail);
-    }
+//    private void sendPasswordResetToken(User storedUser) throws MessagingException {
+//        String passwordResetToken = generateAndSaveActivationToken(storedUser, resetPassword);
+//        String decryptedEmail = standardPBEStringEncryptor.decrypt(storedUser.getEmail());
+//        AppEmail appEmail = AppEmail.builder()
+//                .to(decryptedEmail)
+//                .username(storedUser.fullName())
+//                .emailTemplate(GENERIC_EMAIL_TEMPLATE)
+//                .confirmationUrl(activationUrl)
+//                .activationCode(passwordResetToken)
+//                .subject("Change Password")
+//                .messageTitle("Reset Password")
+//                .confirmationText("Reset your password")
+//                .message("change your password:")
+//                .build();
+//        emailService.sendEmail(appEmail);
+//    }
 
     public void resetPassword(AuthenticationRequest request) throws AccountNotActivatedException {
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
