@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
 
 @ExceptionHandler(RuntimeException.class)
 public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
-    System.out.println("RuntimeException thrown ===>");
+//    System.out.println("RuntimeException thrown ===>");
     return ResponseEntity
             .status(INTERNAL_SERVER_ERROR)
             .body(
@@ -44,7 +44,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
 }
     @ExceptionHandler(LockedException.class)
     public ResponseEntity<ExceptionResponse> handleException(LockedException exp){
-        System.out.println("LockedException thrown ===>");
+//        System.out.println("LockedException thrown ===>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
                 .body(
@@ -57,7 +57,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
     }
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ExceptionResponse> handleException(BadCredentialsException exp){
-        System.out.println("BadCredentialsException thrown ===>");
+//        System.out.println("BadCredentialsException thrown ===>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
                 .body(
@@ -70,7 +70,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
     }
     @ExceptionHandler(UsernameNotFoundException.class)
     public ResponseEntity<ExceptionResponse> handleException(UsernameNotFoundException exp){
-        System.out.println("UsernameNotFoundException thrown ===>");
+//        System.out.println("UsernameNotFoundException thrown ===>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
                 .body(
@@ -84,7 +84,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
 
     @ExceptionHandler(SignatureException.class)
     public ResponseEntity<ExceptionResponse> handleException(SignatureException exp){
-        System.out.println("SignatureException thrown ===>");
+//        System.out.println("SignatureException thrown ===>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
                 .body(
@@ -97,7 +97,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
     }
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ExceptionResponse> handleException(AccessDeniedException exp){
-        System.out.println("AccessDeniedException thrown ===>");
+//        System.out.println("AccessDeniedException thrown ===>");
         return ResponseEntity
                 .status(FORBIDDEN)
                 .body(
@@ -110,7 +110,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
     }
     @ExceptionHandler(ExpiredJwtException.class)
     public ResponseEntity<ExceptionResponse> handleException(ExpiredJwtException exp){
-        System.out.println("ExpiredJwtException thrown ===>");
+//        System.out.println("ExpiredJwtException thrown ===>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
                 .body(
@@ -123,7 +123,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
     }
     @ExceptionHandler(AccountNotActivatedException.class)
     public ResponseEntity<ExceptionResponse> handleException(AccountNotActivatedException exp){
-        System.out.println("AccountNotActivatedException thrown ===>");
+//        System.out.println("AccountNotActivatedException thrown ===>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
                 .body(
@@ -136,7 +136,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
     }
     @ExceptionHandler(MessagingException.class)
     public ResponseEntity<ExceptionResponse> handleException(MessagingException exp){
-        System.out.println("MessagingException thrown ===>");
+//        System.out.println("MessagingException thrown ===>");
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
                 .body(
@@ -148,7 +148,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseBody
     public ResponseEntity<ExceptionResponse> handleException(MethodArgumentNotValidException exp){
-        System.out.println("MethodArgumentNotValidException thrown ===>");
+//        System.out.println("MethodArgumentNotValidException thrown ===>");
         Set<String> errors = new HashSet<>();
         exp.getBindingResult()
                 .getAllErrors()
@@ -167,7 +167,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
     @ExceptionHandler(AWSFileUploadException.class)
     @ResponseBody
     public ResponseEntity<ExceptionResponse> handleException(AWSFileUploadException exp){
-        System.out.println("AWSFileUploadException thrown ===>");
+//        System.out.println("AWSFileUploadException thrown ===>");
         exp.printStackTrace();
         return ResponseEntity
                 .status(BAD_REQUEST)
@@ -182,7 +182,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseBody
     public ResponseEntity<ExceptionResponse> handleDuplicateKeyException(DataIntegrityViolationException exp) {
-        System.out.println("DataIntegrityViolationException thrown ===>");
+//        System.out.println("DataIntegrityViolationException thrown ===>");
         ConstraintViolationException cause = (ConstraintViolationException) exp.getCause();
         String failedField = cause.getConstraintName();
         try {
@@ -208,7 +208,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
     @ResponseBody
     public ResponseEntity<ExceptionResponse> handleException(Exception exp){
         // todo log the exception
-        System.out.println("Generic Exception thrown ===>");
+//        System.out.println("Generic Exception thrown ===>");
         exp.printStackTrace();
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)

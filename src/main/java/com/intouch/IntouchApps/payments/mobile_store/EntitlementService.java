@@ -13,7 +13,7 @@ public class EntitlementService {
     private final UserEntitlementRepository userEntitlementRepository;
     private final SubscriptionService subscriptionService;
     public void recordTransactionAttempt(boolean isValidTransaction, String transactionInfo, IAPRequest payload, String rcTransactionStatus){
-        System.out.println("isValidTransaction===>" + isValidTransaction);
+//        System.out.println("isValidTransaction===>" + isValidTransaction);
 
 //        // Check if the productId is active for this subscriber
 //        Map<String, Object> entitlements = (Map<String, Object>) subscriberInfo.get("subscriber");

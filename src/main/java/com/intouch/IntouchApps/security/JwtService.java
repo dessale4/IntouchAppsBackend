@@ -102,6 +102,7 @@ public class JwtService {
     }
 
     private Key getSignInKey(boolean isRefreshJwtToken) {
+        //=======initial impl start =======
         String jwtSecreteKey = isRefreshJwtToken ? refreshTokenSecretKey : secretKey;
 //        System.out.println("isRefreshJwtToken : jwtSecreteKey =>" + isRefreshJwtToken + " : " + jwtSecreteKey);
         byte[] keyBytes = Decoders.BASE64.decode(jwtSecreteKey);
@@ -109,5 +110,6 @@ public class JwtService {
 //        String encodedKeyBytes = Base64.getEncoder().encodeToString(keyBytes);
 //        System.out.println("Raw Key Bytes (Base64): " + encodedKeyBytes);
         return Keys.hmacShaKeyFor(keyBytes);
+        //=======initial impl end =======
     }
 }

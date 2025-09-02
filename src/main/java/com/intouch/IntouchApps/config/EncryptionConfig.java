@@ -29,12 +29,11 @@ public class EncryptionConfig {
         StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
         SimpleStringPBEConfig config = new SimpleStringPBEConfig();
         config.setPassword(password); // encryptor's private key
-        config.setAlgorithm(algorithm);//"PBEWithMD5AndDES"
+        config.setAlgorithm(algorithm);
         config.setKeyObtentionIterations("1000");
         config.setPoolSize("1");
         config.setProviderName("SunJCE");
-//        config.setSaltGeneratorClassName("org.jasypt.salt.RandomSaltGenerator");
-        config.setSaltGeneratorClassName("org.jasypt.salt."+className);
+        config.setSaltGeneratorClassName("org.jasypt.salt.RandomSaltGenerator");
         config.setIvGeneratorClassName("org.jasypt.iv."+ivGeneratorClassName);
         config.setStringOutputType("base64");
         encryptor.setConfig(config);

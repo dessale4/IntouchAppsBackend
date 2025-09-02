@@ -36,16 +36,16 @@ public class RevenueCatService {
     }
 
     public ResponseEntity<String> verifyPurchase(IAPRequest payload) throws JsonProcessingException {
-        System.out.println("===IAPRequest===");
-        System.out.println(payload);
+//        System.out.println("===IAPRequest===");
+//        System.out.println(payload);
 
 //        String subscriberInfo = getSubscriberInfo(payload.getAppUserId());
         String transactionInfo = getPurchaseByTransactionId(payload.getTransactionId());
-        System.out.println("subscriberInfo===>");
-        System.out.println(transactionInfo);
+//        System.out.println("subscriberInfo===>");
+//        System.out.println(transactionInfo);
         boolean isValidTransaction = validateTransaction(transactionInfo, payload.getTransactionId());
         entitlementService.recordTransactionAttempt(isValidTransaction, transactionInfo, payload, rcTransactionStatus);
-        System.out.println("isValidTransaction===>" + isValidTransaction);
+//        System.out.println("isValidTransaction===>" + isValidTransaction);
         if (isValidTransaction) {
             return ResponseEntity.ok("Purchase verified and entitlement granted");
         } else {
@@ -61,7 +61,7 @@ public class RevenueCatService {
         for (JsonNode transaction : purchaseItems) {
             if (transaction.path("store_purchase_identifier").asText().equals(rcTransactionId)) {
                 transactionFound = true;
-                System.out.println(transaction.path("status").asText());
+//                System.out.println(transaction.path("status").asText());
                 rcTransactionStatus = transaction.path("status").asText();
                 break;
             }
