@@ -24,11 +24,11 @@ public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-    @Column(unique = true)
+    @Column(nullable = false, unique = true)
     private String name;
-    @ManyToMany(mappedBy = "roles")
-    @JsonIgnore
-    private List<User> users;
+//    @ManyToMany(mappedBy = "roles")
+//    @JsonIgnore
+//    private List<User> users;
 //    @CreatedDate
 //    @Column(nullable = false, updatable = false)
     private LocalDateTime createdDate;

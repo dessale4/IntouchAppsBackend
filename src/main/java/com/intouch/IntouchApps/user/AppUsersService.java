@@ -66,7 +66,7 @@ public class AppUsersService {
         String decryptedEmail = standardPBEStringEncryptor.decrypt(userEmail);
         User user = userRepository.findByEmail(userEmail).orElseThrow(() -> new UsernameNotFoundException("No user was found with email: " + decryptedEmail));
 //        ====== consider returning UserDTO instead of UserDetails======
-        boolean subscriptionIsExpired = user.getSubscriptionEndDate() !=null && AppDateUtil.getCurrentUTCLocalDateTime().isAfter(user.getSubscriptionEndDate());
+//        boolean subscriptionIsExpired = user.getSubscriptionEndDate() !=null && AppDateUtil.getCurrentUTCLocalDateTime().isAfter(user.getSubscriptionEndDate());
         Set<String> commonAppAccess = Set.of(UserAndRolesUtil.subscriptionMap().get(commonSubKey));
 //        System.out.println("commonAppAccess => " + commonAppAccess);
         UserDTO userDTO = UserDTO.builder()
@@ -75,11 +75,11 @@ public class AppUsersService {
                 .email(standardPBEStringEncryptor.decrypt(userEmail))
                 .username(user.getPublicUserName())
                 .enabled(user.isEnabled())
-                .isSubscribed(subscriptionIsExpired ? false: user.isSubscribed())
+//                .isSubscribed(subscriptionIsExpired ? false: user.isSubscribed())
                 .accountLocked(user.isAccountLocked())
                 .roles(user.getRoles().stream().map(r->r.getName()).collect(Collectors.toSet()))
                 .appAccesses(UserAndRolesUtil.adminSetEmails.contains(standardPBEStringEncryptor.decrypt(user.getEmail())) ? commonAppAccess : subscriptionService.getUserActiveSubscriptions(user.getPublicUserName()))
-                .subscriptionEndDate(user.getSubscriptionEndDate())
+//                .subscriptionEndDate(user.getSubscriptionEndDate())
                 .paymentEnabled(isAppPaymentEnabled)
                 .build();
         return userDTO;

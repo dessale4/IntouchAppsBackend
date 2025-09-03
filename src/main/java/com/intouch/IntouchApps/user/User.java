@@ -49,8 +49,8 @@ public class User implements UserDetails, Principal {
     private LocalDateTime lastModifiedDate;
     @ManyToMany(fetch = FetchType.EAGER)
     private Set<Role> roles = new HashSet<>();//No role at first
-    private boolean isSubscribed;
-    private LocalDateTime subscriptionEndDate;
+//    private boolean isSubscribed;
+//    private LocalDateTime subscriptionEndDate;
     @Override
     public String getName() {
         return email;
@@ -103,8 +103,8 @@ public class User implements UserDetails, Principal {
                 ", enabled=" + enabled +
                 ", createdDate=" + createdDate +
                 ", roles=" + roles +
-                ", isSubscribed=" + isSubscribed +
-                ", subscriptionEndDate=" + subscriptionEndDate +
+//                ", isSubscribed=" + isSubscribed +
+//                ", subscriptionEndDate=" + subscriptionEndDate +
                 '}';
     }
 }

@@ -21,8 +21,8 @@ public class UserDTO {
     private Set<String> roles;
     //    private Set<AppAccessDTO> appAccess;
     private Set<String> appAccesses;
-    private boolean isSubscribed;
-    private LocalDateTime subscriptionEndDate;
+//    private boolean isSubscribed;
+//    private LocalDateTime subscriptionEndDate;
     private String username;
     private Boolean paymentEnabled;
 }

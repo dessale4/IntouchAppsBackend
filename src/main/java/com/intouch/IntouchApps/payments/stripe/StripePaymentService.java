@@ -115,10 +115,10 @@ public class StripePaymentService {
                                               User storedUser
     ){
         try {
-            LocalDateTime subscriptionEndDate = storedUser.getSubscriptionEndDate();
-            LocalDateTime localDateTimeToSave = (subscriptionEndDate != null && AppDateUtil.getCurrentUTCLocalDateTime().isBefore(subscriptionEndDate)) ? subscriptionEndDate.plusMonths(subscriptionMonthCount) : AppDateUtil.getCurrentUTCLocalDateTime().plusMonths(subscriptionMonthCount);
-            storedUser.setSubscribed(true);
-            storedUser.setSubscriptionEndDate(localDateTimeToSave);
+//            LocalDateTime subscriptionEndDate = storedUser.getSubscriptionEndDate();
+//            LocalDateTime localDateTimeToSave = (subscriptionEndDate != null && AppDateUtil.getCurrentUTCLocalDateTime().isBefore(subscriptionEndDate)) ? subscriptionEndDate.plusMonths(subscriptionMonthCount) : AppDateUtil.getCurrentUTCLocalDateTime().plusMonths(subscriptionMonthCount);
+//            storedUser.setSubscribed(true);
+//            storedUser.setSubscriptionEndDate(localDateTimeToSave);
             storedUser.setLastModifiedDate(AppDateUtil.getCurrentUTCLocalDateTime());
             User updateUser = userRepository.save(storedUser);
         }catch (RuntimeException exception){
