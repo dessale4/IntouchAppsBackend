@@ -25,7 +25,6 @@ public class EncryptionConfig {
     private String ivGeneratorClassName;
     @Bean
     public StandardPBEStringEncryptor standardPBEStringEncryptor(){
-//
         StandardPBEStringEncryptor encryptor = new StandardPBEStringEncryptor();
         SimpleStringPBEConfig config = new SimpleStringPBEConfig();
         config.setPassword(password); // encryptor's private key
@@ -33,7 +32,7 @@ public class EncryptionConfig {
         config.setKeyObtentionIterations("1000");
         config.setPoolSize("1");
         config.setProviderName("SunJCE");
-        config.setSaltGeneratorClassName("org.jasypt.salt.RandomSaltGenerator");
+        config.setSaltGeneratorClassName("org.jasypt.salt."+className);
         config.setIvGeneratorClassName("org.jasypt.iv."+ivGeneratorClassName);
         config.setStringOutputType("base64");
         encryptor.setConfig(config);
