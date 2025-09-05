@@ -1,36 +1,26 @@
-package com.intouch.IntouchApps.appkeys;
-
+package com.intouch.IntouchApps.appkeys.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.intouch.IntouchApps.common.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
 import lombok.*;
 
 //@Data
 @Getter
 @Setter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "KeyExample_TBL")
-public class KeyExample extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Builder
+public class KeyExampleDTO {
     private Integer id;
     private String englishName;
-    @Column(unique = true)
     private String tigrinyaName;
     private String amharicName;
     private String category;
     private Integer keyId;
     private Integer keyFamilyId;
-    @JsonProperty
     private boolean isDefault;
     private String imageUrl;
-    @Column(unique = true)
     private String imageFileName;
-    @Column(unique = true)
     private String audioFileName;
     private String audioUrl;
 }

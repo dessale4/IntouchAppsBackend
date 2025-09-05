@@ -1,24 +1,19 @@
-package com.intouch.IntouchApps.appkeys;
+package com.intouch.IntouchApps.appkeys.dtos;
 
-import com.intouch.IntouchApps.common.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
 import lombok.*;
+
 
 //@Data
 @Getter
 @Setter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "KeyFamilyAudio_TBL")
-public class KeyFamilyAudio extends BaseEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+@Builder
+public class KeyFamilyAudioDTO {
     private Integer id;
     private Integer keyFamilyId;
     private String keyFamilyAudioUrl;
-    @Column(unique = true)
     private String keyFamilyAudioFileName;
     private boolean isDefault;
     private String keyOneTimeStamp;

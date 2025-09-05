@@ -1,5 +1,6 @@
 package com.intouch.IntouchApps.appkeys;
 
+import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,13 +25,18 @@ public class KeyFamilyController {
         return keyFamilyService.getAllKeyFamilies();
     }
 
-    @GetMapping("/getKeyFamiliesWithDefaultExamples")
-    public List<KeyFamilyResponse> getKeyFamiliesWithDefaultExamples(){
+//    @GetMapping("/getKeyFamiliesWithDefaultExamples")
+//    public List<KeyFamilyResponse> getKeyFamiliesWithDefaultExamples(){
+//
+//        return keyFamilyService.getKeyFamiliesWithDefaultExamples();
+//    }
+@GetMapping("/getKeyFamiliesWithDefaultExamples")
+public List<KeyFamilyDefaultDTO> getKeyFamiliesWithDefaultExamples(){
 
-        return keyFamilyService.getKeyFamiliesWithDefaultExamples();
-    }
+    return keyFamilyService.getKeyFamiliesWithDefaultExamples();
+}
     @GetMapping("/getKeyFamilyWithDefaultExamples")
-    public KeyFamilyResponse getKeyFamilyWithDefaultExamples(@RequestParam("keyFamilyId") Integer keyFamilyId){
+    public KeyFamilyDefaultDTO getKeyFamilyWithDefaultExamples(@RequestParam("keyFamilyId") Integer keyFamilyId){
         return keyFamilyService.getKeyFamilyWithDefaultExamples(keyFamilyId);
     }
 }

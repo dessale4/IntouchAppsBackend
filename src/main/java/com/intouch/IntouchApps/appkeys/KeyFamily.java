@@ -6,7 +6,9 @@ import lombok.*;
 import java.util.HashSet;
 import java.util.Set;
 
-@Data
+//@Data
+@Getter
+@Setter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor

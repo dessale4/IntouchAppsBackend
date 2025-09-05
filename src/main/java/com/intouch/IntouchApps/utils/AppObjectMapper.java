@@ -30,11 +30,26 @@ public class AppObjectMapper {
     }
 
     public KeyFamilyAudio decryptKeyFamilyAWSAudioLocation(KeyFamilyAudio keyFamilyAudio){
-        KeyFamilyAudio copiedKeyFamilyAudio = new KeyFamilyAudio();
-        BeanUtils.copyProperties(keyFamilyAudio, copiedKeyFamilyAudio);
-        String decryptedKeyFamilyAudioUrl = standardPBEStringEncryptor.decrypt(keyFamilyAudio.getKeyFamilyAudioUrl());
-        copiedKeyFamilyAudio.setKeyFamilyAudioUrl(decryptedKeyFamilyAudioUrl);
-       return copiedKeyFamilyAudio;
+//        KeyFamilyAudio copiedKeyFamilyAudio = new KeyFamilyAudio();
+//        BeanUtils.copyProperties(keyFamilyAudio, copiedKeyFamilyAudio);
+        return KeyFamilyAudio.builder()
+                .keyFamilyAudioUrl(keyFamilyAudio.getKeyFamilyAudioUrl() ==null ?keyFamilyAudio.getKeyFamilyAudioUrl() : standardPBEStringEncryptor.decrypt(keyFamilyAudio.getKeyFamilyAudioUrl()))
+                .keyFamilyId(keyFamilyAudio.getKeyFamilyId())
+                .keyFamilyAudioFileName(keyFamilyAudio.getKeyFamilyAudioFileName())
+                .isDefault(keyFamilyAudio.isDefault())
+                .keyOneTimeStamp(keyFamilyAudio.getKeyOneTimeStamp())
+                .keyTwoTimeStamp(keyFamilyAudio.getKeyTwoTimeStamp())
+                .keyThreeTimeStamp(keyFamilyAudio.getKeyThreeTimeStamp())
+                .keyFourTimeStamp(keyFamilyAudio.getKeyFourTimeStamp())
+                .keyFiveTimeStamp(keyFamilyAudio.getKeyFiveTimeStamp())
+                .keySixTimeStamp(keyFamilyAudio.getKeySixTimeStamp())
+                .keySevenTimeStamp(keyFamilyAudio.getKeySevenTimeStamp())
+                .build();
+//        if(keyFamilyAudio.getKeyFamilyAudioUrl() !=null){
+//            String decryptedKeyFamilyAudioUrl = standardPBEStringEncryptor.decrypt(keyFamilyAudio.getKeyFamilyAudioUrl());
+//            copiedKeyFamilyAudio.setKeyFamilyAudioUrl(decryptedKeyFamilyAudioUrl);
+//        }
+//       return copiedKeyFamilyAudio;
     }
 
     public KeyExample decryptKeyExampleAWSImageAndAudioLocation(KeyExample keyExample){
@@ -58,7 +73,8 @@ public class AppObjectMapper {
     }
 
     private KeyAudio decryptKeyAudioAWSUrl(KeyAudio defaultKeyAudio) {
-        defaultKeyAudio.setKeyAudioUrl(defaultKeyAudio.getKeyAudioUrl() != null ? standardPBEStringEncryptor.decrypt(defaultKeyAudio.getKeyAudioUrl()) : defaultKeyAudio.getKeyAudioUrl());
+//        defaultKeyAudio.setKeyAudioUrl(defaultKeyAudio.getKeyAudioUrl() != null ? standardPBEStringEncryptor.decrypt(defaultKeyAudio.getKeyAudioUrl()) : defaultKeyAudio.getKeyAudioUrl());
+        defaultKeyAudio.setKeyAudioUrl(defaultKeyAudio.getKeyAudioUrl());
         return defaultKeyAudio;
     }
 

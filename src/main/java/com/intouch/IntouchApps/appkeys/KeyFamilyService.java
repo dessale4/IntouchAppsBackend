@@ -1,8 +1,11 @@
 package com.intouch.IntouchApps.appkeys;
 
+import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
+import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultMapper;
 import com.intouch.IntouchApps.utils.AppObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -18,19 +21,50 @@ import java.util.stream.Collectors;
 public class KeyFamilyService {
     private final KeyFamilyRepository keyFamilyRepository;
     private final AppObjectMapper appObjectMapper;
-
+    @Autowired
+    private KeyFamilyDefaultMapper keyFamilyDefaultMapper;
     @Transactional
-    public KeyFamily addKeyBasics(AppKeyRequest AppKeyRequest) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        KeyFamily keyFamily = keyFamilyRepository.findByKeyFamilyId(AppKeyRequest.getKeyFamilyId()).orElseThrow(() -> new RuntimeException("Some thing went wrong"));
+    public KeyFamily addKeyBasics(AppKeyRequest appKeyRequest) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        KeyFamily keyFamily = keyFamilyRepository.findByKeyFamilyId(appKeyRequest.getKeyFamilyId()).orElseThrow(() -> new RuntimeException("Some thing went wrong"));
         AppKey appKey = AppKey.builder()
-                .keyId(AppKeyRequest.getKeyId())
-                .keyName(AppKeyRequest.getKeyName())
-                .keyNameInEnglish(AppKeyRequest.getKeyNameInEnglish())
-                .keyFamilyId(AppKeyRequest.getKeyFamilyId()).build();
+                .keyId(appKeyRequest.getKeyId())
+                .keyName(appKeyRequest.getKeyName())
+                .keyNameInEnglish(appKeyRequest.getKeyNameInEnglish())
+                .keyFamilyId(appKeyRequest.getKeyFamilyId()).build();
+        Integer keyId = appKeyRequest.getKeyId();
+//        KeyFamily updatedKeyFamily = linkAppKeyToKeyFamily(keyFamily, appKey, appKeyRequest.getKeyId());
+        switch (keyId) {
+            case 1: {
+                keyFamily.setKeyOne(appKey);
+                break;
+            }
+            case 2: {
+                keyFamily.setKeyTwo(appKey);
+                break;
+            }
+            case 3: {
+                keyFamily.setKeyThree(appKey);
+                break;
+            }
+            case 4: {
+                keyFamily.setKeyFour(appKey);
+                break;
+            }
+            case 5: {
+                keyFamily.setKeyFive(appKey);
+                break;
+            }
+            case 6: {
+                keyFamily.setKeySix(appKey);
+                break;
+            }
+            case 7: {
+                keyFamily.setKeySeven(appKey);
+                break;
+            }
+        }
 
-        KeyFamily updatedKeyFamily = linkAppKeyToKeyFamily(keyFamily, appKey, AppKeyRequest.getKeyId());
-
-        KeyFamily persistedKeyFamily = keyFamilyRepository.save(updatedKeyFamily);
+        KeyFamily persistedKeyFamily = keyFamilyRepository.save(keyFamily);
         return persistedKeyFamily;
     }
 
@@ -77,17 +111,24 @@ public class KeyFamilyService {
         return decryptedKeyFamilies;
     }
 
-    public List<KeyFamilyResponse> getKeyFamiliesWithDefaultExamples() {
-        Sort sort = Sort.by(Sort.Direction.ASC, "keyFamilyId");
-        List<KeyFamily> keyFamilyList = keyFamilyRepository.findAll(sort);
+//    public List<KeyFamilyResponse> getKeyFamiliesWithDefaultExamples() {
+//        Sort sort = Sort.by(Sort.Direction.ASC, "keyFamilyId");
+//        List<KeyFamily> keyFamilyList = keyFamilyRepository.findAll(sort);
+//        return keyFamilyList.stream()
+//                .map((kf) -> appObjectMapper.mapKeyFamilyToKeyFamilyResponse(kf))
+//                .collect(Collectors.toList());
+//    }
+public List<KeyFamilyDefaultDTO> getKeyFamiliesWithDefaultExamples() {
+    Sort sort = Sort.by(Sort.Direction.ASC, "keyFamilyId");
+    List<KeyFamily> keyFamilyList = keyFamilyRepository.findAll(sort);
+    return keyFamilyList.stream()
+            .map((kf) -> keyFamilyDefaultMapper.toKeyFamilyDefaultDTO(kf))
+            .collect(Collectors.toList());
+}
 
-        return keyFamilyList.stream()
-                .map((kf) -> appObjectMapper.mapKeyFamilyToKeyFamilyResponse(kf))
-                .collect(Collectors.toList());
-    }
-
-    public KeyFamilyResponse getKeyFamilyWithDefaultExamples(Integer keyFamilyId) {
+    public KeyFamilyDefaultDTO getKeyFamilyWithDefaultExamples(Integer keyFamilyId) {
         KeyFamily storedkeyFamily = keyFamilyRepository.findByKeyFamilyId(keyFamilyId).orElseThrow(() -> new RuntimeException("No key family found with keyFamilyId: " + keyFamilyId));
-        return appObjectMapper.mapKeyFamilyToKeyFamilyResponse(storedkeyFamily);
+//        return appObjectMapper.mapKeyFamilyToKeyFamilyResponse(storedkeyFamily);
+        return keyFamilyDefaultMapper.toKeyFamilyDefaultDTO(storedkeyFamily);
     }
 }
