@@ -25,5 +25,6 @@ public class Subscription extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime expirationDate;
     private String noteOnUpdate;
+    private Integer productPurchaseCount;
 
 }

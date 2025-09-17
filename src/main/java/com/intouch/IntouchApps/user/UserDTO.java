@@ -17,6 +17,7 @@ public class UserDTO {
     private String email;
     private boolean accountLocked;
     private boolean enabled;
+    private Integer screensLockPin;
     //    private Set<Role> roles;
     private Set<String> roles;
     //    private Set<AppAccessDTO> appAccess;

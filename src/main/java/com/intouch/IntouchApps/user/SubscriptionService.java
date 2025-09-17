@@ -31,12 +31,14 @@ public class SubscriptionService {
                     .subscriptionProductName(subProductName)
                     .expirationDate(AppDateUtil.getCurrentUTCLocalDateTime().plusDays(addedDays))
                     .noteOnUpdate(isGift ? "Gift from " + offeredBy : "First Self Subscription")
+                    .productPurchaseCount(1)
                     .build();
             subscriptionRepository.save(subscription);
         }else{
             LocalDateTime subExpirationDate = subscription.getExpirationDate().isAfter(AppDateUtil.getCurrentUTCLocalDateTime()) ? subscription.getExpirationDate().plusDays(addedDays) : AppDateUtil.getCurrentUTCLocalDateTime().plusDays(addedDays);
             subscription.setExpirationDate(subExpirationDate);
             subscription.setNoteOnUpdate(isGift ? "Gift from " + offeredBy : "Self Subscription Renewal");
+            subscription.setProductPurchaseCount(subscription.getProductPurchaseCount() + 1);
             subscriptionRepository.save(subscription);
         }
     return subscription;
