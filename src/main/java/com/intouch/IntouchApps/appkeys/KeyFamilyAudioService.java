@@ -5,6 +5,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -47,13 +48,14 @@ public class KeyFamilyAudioService {
         }
         KeyFamily storedKeyFamily = keyFamilyRepository.findByKeyFamilyId(keyFamilyId).orElseThrow(() -> new RuntimeException("No keyFamily is found with keyFamilyId: " + keyFamilyId));
 
-        KeyFamilyAudio defaultKeyFamilyAudio = storedKeyFamily.getDefaultKeyFamilyAudio();
+        KeyFamilyAudio defaultKeyFamilyAudio = storedKeyFamily.getKeyFamilyAudioSet().stream().filter(au->au.isDefault()).findFirst().get();
         defaultKeyFamilyAudio.setDefault(false);
-        keyFamilyAudioRepository.save(defaultKeyFamilyAudio);
+//        keyFamilyAudioRepository.save(defaultKeyFamilyAudio);
 
         storedKeyFamilyAudio.setDefault(true);
-        storedKeyFamily.setDefaultKeyFamilyAudio(storedKeyFamilyAudio);
-        keyFamilyRepository.save(storedKeyFamily);
+        keyFamilyAudioRepository.saveAll(List.of(defaultKeyFamilyAudio, storedKeyFamilyAudio));
+//        storedKeyFamily.setDefaultKeyFamilyAudio(storedKeyFamilyAudio);
+//        keyFamilyRepository.save(storedKeyFamily);
 
         return storedKeyFamilyAudio;
     }

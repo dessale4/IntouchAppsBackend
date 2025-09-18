@@ -33,12 +33,12 @@ public class AppKey extends BaseEntity {
     private String keyNameInEnglish;
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<KeyExample> keyExamples = new HashSet<>();
-    @OneToOne(cascade = CascadeType.ALL)
-    private KeyExample defaultKeyExample;
+//    @OneToOne(cascade = CascadeType.ALL)
+//    private KeyExample defaultKeyExample;
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<KeyAudio> keyAudios = new HashSet<>();
-    @OneToOne(cascade = CascadeType.ALL)
-    private KeyAudio defaultKeyAudio;
+//    @OneToOne(cascade = CascadeType.ALL)
+//    private KeyAudio defaultKeyAudio;
     public void addKeyExample(KeyExample keyExample){
         keyExamples.add(keyExample);
     }

@@ -3,6 +3,7 @@ package com.intouch.IntouchApps.fileUpload;
 import com.intouch.IntouchApps.appkeys.AppKey;
 import com.intouch.IntouchApps.appkeys.KeyExample;
 import com.intouch.IntouchApps.appkeys.KeyFamilyResponse;
+import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,7 @@ public class AWSFileUploadController {
 
     @PostMapping("/keyFamilyAudio")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-    public KeyFamilyResponse uploadKeyFamilyAudio(@RequestParam("file") MultipartFile file, @RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("folderName") String folderName) {
+    public KeyFamilyDefaultDTO uploadKeyFamilyAudio(@RequestParam("file") MultipartFile file, @RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("folderName") String folderName) {
 
         return awsFileUploadService.uploadKeyFamilyAudio(file, keyFamilyId, folderName);
     }

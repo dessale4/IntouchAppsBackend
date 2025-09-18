@@ -15,19 +15,19 @@ import java.util.stream.Collectors;
 public class AppObjectMapper {
     private String tigrinya = AppConstantsEnum.TIGRINYA.name();
     private final StandardPBEStringEncryptor standardPBEStringEncryptor;
-    public KeyFamilyResponse mapKeyFamilyToKeyFamilyResponse(KeyFamily keyFamily){
-        return KeyFamilyResponse.builder()
-                .keyFamilyId(keyFamily.getKeyFamilyId())
-                .defaultKeyFamilyAudio(keyFamily.getDefaultKeyFamilyAudio() != null ? decryptKeyFamilyAWSAudioLocation(keyFamily.getDefaultKeyFamilyAudio()): keyFamily.getDefaultKeyFamilyAudio())
-                .keyOne(mapAppKeyToAppKeyResponse(keyFamily.getKeyOne()))
-                .keyTwo(mapAppKeyToAppKeyResponse(keyFamily.getKeyTwo()))
-                .keyThree(mapAppKeyToAppKeyResponse(keyFamily.getKeyThree()))
-                .keyFour(mapAppKeyToAppKeyResponse(keyFamily.getKeyFour()))
-                .keyFive(mapAppKeyToAppKeyResponse(keyFamily.getKeyFive()))
-                .keySix(mapAppKeyToAppKeyResponse(keyFamily.getKeySix()))
-                .keySeven(mapAppKeyToAppKeyResponse(keyFamily.getKeySeven()))
-                .build();
-    }
+//    public KeyFamilyResponse mapKeyFamilyToKeyFamilyResponse(KeyFamily keyFamily){
+//        return KeyFamilyResponse.builder()
+//                .keyFamilyId(keyFamily.getKeyFamilyId())
+//                .defaultKeyFamilyAudio(keyFamily.getDefaultKeyFamilyAudio() != null ? decryptKeyFamilyAWSAudioLocation(keyFamily.getDefaultKeyFamilyAudio()): keyFamily.getDefaultKeyFamilyAudio())
+//                .keyOne(mapAppKeyToAppKeyResponse(keyFamily.getKeyOne()))
+//                .keyTwo(mapAppKeyToAppKeyResponse(keyFamily.getKeyTwo()))
+//                .keyThree(mapAppKeyToAppKeyResponse(keyFamily.getKeyThree()))
+//                .keyFour(mapAppKeyToAppKeyResponse(keyFamily.getKeyFour()))
+//                .keyFive(mapAppKeyToAppKeyResponse(keyFamily.getKeyFive()))
+//                .keySix(mapAppKeyToAppKeyResponse(keyFamily.getKeySix()))
+//                .keySeven(mapAppKeyToAppKeyResponse(keyFamily.getKeySeven()))
+//                .build();
+//    }
 
     public KeyFamilyAudio decryptKeyFamilyAWSAudioLocation(KeyFamilyAudio keyFamilyAudio){
 //        KeyFamilyAudio copiedKeyFamilyAudio = new KeyFamilyAudio();
@@ -57,20 +57,20 @@ public class AppObjectMapper {
         keyExample.setAudioUrl(keyExample.getAudioUrl() != null ? standardPBEStringEncryptor.decrypt(keyExample.getAudioUrl()) : keyExample.getAudioUrl());
         return keyExample;
     }
-    public AppKeyResponse mapAppKeyToAppKeyResponse(AppKey appKey){
-        if(appKey !=null) {
-            return AppKeyResponse.builder()
-                    .keyId(appKey.getKeyId())
-                    .keyFamilyId(appKey.getKeyFamilyId())
-                    .keyName(appKey.getKeyName())
-                    .keyInEnglish(appKey.getKeyNameInEnglish())
-                    .defaultKeyAudio(appKey.getDefaultKeyAudio() != null ? decryptKeyAudioAWSUrl(appKey.getDefaultKeyAudio()) : appKey.getDefaultKeyAudio())
-                    .defaultKeyExample(appKey.getDefaultKeyExample() != null ? decryptKeyExampleImageAndAudioAWSUrls(appKey.getDefaultKeyExample()) : appKey.getDefaultKeyExample())
-                    .build();
-        }else{
-            return AppKeyResponse.builder().build();
-        }
-    }
+//    public AppKeyResponse mapAppKeyToAppKeyResponse(AppKey appKey){
+//        if(appKey !=null) {
+//            return AppKeyResponse.builder()
+//                    .keyId(appKey.getKeyId())
+//                    .keyFamilyId(appKey.getKeyFamilyId())
+//                    .keyName(appKey.getKeyName())
+//                    .keyInEnglish(appKey.getKeyNameInEnglish())
+//                    .defaultKeyAudio(appKey.getDefaultKeyAudio() != null ? decryptKeyAudioAWSUrl(appKey.getDefaultKeyAudio()) : appKey.getDefaultKeyAudio())
+//                    .defaultKeyExample(appKey.getDefaultKeyExample() != null ? decryptKeyExampleImageAndAudioAWSUrls(appKey.getDefaultKeyExample()) : appKey.getDefaultKeyExample())
+//                    .build();
+//        }else{
+//            return AppKeyResponse.builder().build();
+//        }
+//    }
 
     private KeyAudio decryptKeyAudioAWSUrl(KeyAudio defaultKeyAudio) {
 //        defaultKeyAudio.setKeyAudioUrl(defaultKeyAudio.getKeyAudioUrl() != null ? standardPBEStringEncryptor.decrypt(defaultKeyAudio.getKeyAudioUrl()) : defaultKeyAudio.getKeyAudioUrl());

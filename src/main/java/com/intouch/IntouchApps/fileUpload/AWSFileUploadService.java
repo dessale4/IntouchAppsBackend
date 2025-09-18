@@ -1,6 +1,8 @@
 package com.intouch.IntouchApps.fileUpload;
 
 import com.intouch.IntouchApps.appkeys.*;
+import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
+import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultMapper;
 import com.intouch.IntouchApps.handler.AWSFileUploadException;
 import com.intouch.IntouchApps.utils.AppObjectMapper;
 import jakarta.transaction.Transactional;
@@ -18,6 +20,7 @@ import software.amazon.awssdk.utils.IoUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,6 +33,7 @@ public class AWSFileUploadService {
     private String awsS3SecretKey;
     @Value("${application.aws.s3.bucket_name}")
     private String awsS3BucketName;
+    private final KeyFamilyDefaultMapper keyFamilyDefaultMapper;
 
     private final S3Client s3Client;
     private final KeyExampleRepository keyExampleRepository;
@@ -67,9 +71,9 @@ public class AWSFileUploadService {
             throw new RuntimeException("Some thing went wrong");
         }
         String awsFileName = file.getOriginalFilename();
-        if(storedKeyExample.getAudioFileName() != null){
-            throw new RuntimeException(awsFileName + " :Already exists in DB");
-        }
+//        if(storedKeyExample.getAudioFileName() != null){
+//            throw new RuntimeException(awsFileName + " :Already exists in DB");
+//        }
         try {
             String awsS3FileURl = saveFileToAWSS3Bucket(file, "video/mp4", folderName);
 
@@ -96,17 +100,21 @@ public class AWSFileUploadService {
         }
         try {
             String awsS3FileURl = saveFileToAWSS3Bucket(file, "video/mp4", folderName);
-
+            Optional<KeyAudio> existingDefaultKeyAudio = storedAppKey.getKeyAudios().stream().filter(a -> a.isDefault()).findFirst();
             KeyAudio keyAudio = KeyAudio.builder()
                     .keyAudioUrl(awsS3FileURl)
                     .keyId(keyId)
                     .keyFamilyId(keyFamilyId)
                     .keyAudioFileName(awsFileName)
-                    .isDefault(storedAppKey.getDefaultKeyAudio() != null ? false : true)
+                    .isDefault(existingDefaultKeyAudio.isPresent() ? false : true)
                     .build();
             storedAppKey.addKeyAudio(keyAudio);
-            if(keyAudio.isDefault()){
-                storedAppKey.setDefaultKeyAudio(keyAudio);
+            if(keyAudio.isDefault() && existingDefaultKeyAudio.isPresent()){
+                KeyAudio keyAudioToUpdate = existingDefaultKeyAudio.get();
+                keyAudioToUpdate.setDefault(false);
+                storedAppKey.addKeyAudio(keyAudioToUpdate);//will update the existing keyAudio
+//                storedAppKey.setDefaultKeyAudio(keyAudio);
+
             }
             storedAppKey = appKeyRepository.save(storedAppKey);
 
@@ -117,19 +125,19 @@ public class AWSFileUploadService {
     }
     private String saveFileToAWSS3Bucket(MultipartFile file, String contentType, String folderName ) throws IOException, AWSFileUploadException {
         String fileName = file.getOriginalFilename();
-        int lastIndexOfDot = fileName.lastIndexOf(".");
-        String s3FileName = null;
-        if (lastIndexOfDot > 0) {
-            s3FileName = fileName.substring(0, lastIndexOfDot);
-        } else {
-            s3FileName = fileName;
-        }
+//        int lastIndexOfDot = fileName.lastIndexOf(".");
+        String s3FileName = fileName;
+//        if (lastIndexOfDot > 0) {
+//            s3FileName = fileName.substring(0, lastIndexOfDot);
+//        } else {
+//            s3FileName = fileName;
+//        }
         String fileFolderLocation = folderName + "/" + s3FileName;
 
         boolean fileAlreadyExist = doesFileExistInTheSpecifiedLocation(fileFolderLocation);
         if (fileAlreadyExist) {
             String awsFileLocation = "https://" + awsS3BucketName + ".s3.amazonaws.com/" + fileFolderLocation;
-            awsFileLocation = standardPBEStringEncryptor.encrypt(awsFileLocation);
+//            awsFileLocation = standardPBEStringEncryptor.encrypt(awsFileLocation);
             return awsFileLocation;
 //            throw new AWSFileUploadException("No need to save the same file multiple times.");
         }
@@ -151,7 +159,7 @@ public class AWSFileUploadService {
             bufferedInputStream.mark(Integer.MAX_VALUE); // Mark at the beginning of the stream
             PutObjectResponse putObjectResponse = s3Client.putObject(request, RequestBody.fromInputStream(bufferedInputStream, file.getSize()));
             String awsFileLocation = "https://" + awsS3BucketName + ".s3.amazonaws.com/" + fileFolderLocation;
-            awsFileLocation = standardPBEStringEncryptor.encrypt(awsFileLocation);
+//            awsFileLocation = standardPBEStringEncryptor.encrypt(awsFileLocation);
             return awsFileLocation;
         } finally {
             IoUtils.closeQuietly(inputStream, null);
@@ -176,15 +184,20 @@ public class AWSFileUploadService {
             throw new RuntimeException(e.getMessage());
         }
     }
-    public KeyFamilyResponse uploadKeyFamilyAudio(MultipartFile file, Integer keyFamilyId, String folderName) {
+    public KeyFamilyDefaultDTO uploadKeyFamilyAudio(MultipartFile file, Integer keyFamilyId, String folderName) {
         KeyFamily storedKeyFamily = keyFamilyRepository.findByKeyFamilyId(keyFamilyId).orElseThrow(() -> new RuntimeException("KeyFamily not found with keyFamilyId: " + keyFamilyId));
         String keyFamilyFileName = file.getOriginalFilename();
         KeyFamilyAudio storedKeyFamilyAudio = keyFamilyAudioRepository.findByKeyFamilyIdAndKeyFamilyAudioFileName(keyFamilyId, keyFamilyFileName);
         if(storedKeyFamilyAudio != null){
             throw new RuntimeException("KeyFamily Audio already exists with name: " + keyFamilyFileName);
         }
-        KeyFamilyResponse keyFamilyResponse = null;
-        KeyFamilyAudio defaultKeyFamilyAudio = storedKeyFamily.getDefaultKeyFamilyAudio();
+//        KeyFamilyResponse keyFamilyResponse = null;
+//        KeyFamilyAudio defaultKeyFamilyAudio = storedKeyFamily.getDefaultKeyFamilyAudio();
+                KeyFamilyAudio defaultKeyFamilyAudio = null;
+        Optional<KeyFamilyAudio> keyFamilyAudioOptional = storedKeyFamily.getKeyFamilyAudioSet().stream().filter(au -> au.isDefault()).findFirst();
+        if(keyFamilyAudioOptional.isPresent()){
+            defaultKeyFamilyAudio = keyFamilyAudioOptional.get();
+        }
         KeyFamilyAudio keyFamilyAudio = KeyFamilyAudio.builder().build();
         try{
             String awsS3FileURl = saveFileToAWSS3Bucket(file, "video/mp4", folderName);
@@ -195,20 +208,22 @@ public class AWSFileUploadService {
                 keyFamilyAudio.setKeyFamilyAudioUrl(awsS3FileURl);
                 keyFamilyAudio.setKeyFamilyAudioFileName(keyFamilyFileName);
                 storedKeyFamily.addKeyFamilyAudio(keyFamilyAudio);
-                storedKeyFamily.setDefaultKeyFamilyAudio(keyFamilyAudio);
+//                storedKeyFamily.setDefaultKeyFamilyAudio(keyFamilyAudio);
                 storedKeyFamily = keyFamilyRepository.save(storedKeyFamily);
-                keyFamilyResponse = appObjectMapper.mapKeyFamilyToKeyFamilyResponse(storedKeyFamily);
+//                keyFamilyResponse = appObjectMapper.mapKeyFamilyToKeyFamilyResponse(storedKeyFamily);
+                return keyFamilyDefaultMapper.toKeyFamilyDefaultDTO(storedKeyFamily);
             }else{
                 keyFamilyAudio.setKeyFamilyId(keyFamilyId);
                 keyFamilyAudio.setKeyFamilyAudioUrl(awsS3FileURl);
                 keyFamilyAudio.setKeyFamilyAudioFileName(keyFamilyFileName);
                 storedKeyFamily.addKeyFamilyAudio(keyFamilyAudio);
                 storedKeyFamily = keyFamilyRepository.save(storedKeyFamily);
-                keyFamilyResponse = appObjectMapper.mapKeyFamilyToKeyFamilyResponse(storedKeyFamily);
+//                keyFamilyResponse = appObjectMapper.mapKeyFamilyToKeyFamilyResponse(storedKeyFamily);
+                return keyFamilyDefaultMapper.toKeyFamilyDefaultDTO(storedKeyFamily);
             }
         }catch (Exception e){
             throw new RuntimeException(e.getMessage());
         }
-        return keyFamilyResponse;
+//        return keyFamilyResponse;
     }
 }

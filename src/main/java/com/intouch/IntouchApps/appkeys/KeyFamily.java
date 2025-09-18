@@ -22,8 +22,8 @@ public class KeyFamily {
     private Integer keyFamilyId;
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private Set<KeyFamilyAudio> keyFamilyAudioSet = new HashSet<>();
-    @OneToOne(cascade = CascadeType.ALL)
-    private KeyFamilyAudio defaultKeyFamilyAudio;
+//    @OneToOne(cascade = CascadeType.ALL)
+//    private KeyFamilyAudio defaultKeyFamilyAudio;
     @OneToOne(cascade = CascadeType.ALL)
     private AppKey keyOne;
     @OneToOne(cascade = CascadeType.ALL)
