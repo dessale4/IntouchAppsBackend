@@ -70,7 +70,7 @@ public class AppUsersService {
 //        ====== consider returning UserDTO instead of UserDetails======
 //        boolean subscriptionIsExpired = user.getSubscriptionEndDate() !=null && AppDateUtil.getCurrentUTCLocalDateTime().isAfter(user.getSubscriptionEndDate());
         Set<String> commonAppAccess = Set.of(UserAndRolesUtil.subscriptionMap().get(commonSubKey));
-        System.out.println("isAppPaymentEnabled => " + isAppPaymentEnabled);
+//        System.out.println("isAppPaymentEnabled => " + isAppPaymentEnabled);
         UserDTO userDTO = UserDTO.builder()
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())

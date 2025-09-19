@@ -30,7 +30,7 @@ public abstract class KeyFamilyDefaultMapper {
                 .orElse(null);
     }
 
-    @Mapping(source = "keyFamilyAudioUrl", target = "keyFamilyAudioUrl", qualifiedByName = "decrypt")
+//    @Mapping(source = "keyFamilyAudioUrl", target = "keyFamilyAudioUrl", qualifiedByName = "decrypt")
     abstract KeyFamilyAudioDTO toKeyFamilyAudioDTO(KeyFamilyAudio keyFamilyAudio);
 
     @Mapping(source = "keyExamples", target = "defaultKeyExample", qualifiedByName = "mapDefaultKeyExample")
@@ -47,8 +47,8 @@ public abstract class KeyFamilyDefaultMapper {
                 .orElse(null);
     }
 
-    @Mapping(source = "imageUrl", target = "imageUrl", qualifiedByName = "decrypt")
-    @Mapping(source = "audioUrl", target = "audioUrl", qualifiedByName = "decrypt")
+//    @Mapping(source = "imageUrl", target = "imageUrl", qualifiedByName = "decrypt")
+//    @Mapping(source = "audioUrl", target = "audioUrl", qualifiedByName = "decrypt")
     public abstract KeyExampleDTO toKeyExampleDTO(KeyExample keyExample);
 
     @Named("mapDefaultKeyAudio")
@@ -61,6 +61,6 @@ public abstract class KeyFamilyDefaultMapper {
                 .orElse(null);
     }
 
-    @Mapping(source = "keyAudioUrl", target = "keyAudioUrl", qualifiedByName = "decrypt")
+//    @Mapping(source = "keyAudioUrl", target = "keyAudioUrl", qualifiedByName = "decrypt")
     public abstract KeyAudioDTO toKeyAudioDTO(KeyAudio keyAudio);
 }

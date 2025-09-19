@@ -165,15 +165,15 @@ public class AuthenticationService {
                 )
         );
         var claims = new HashMap<String, Object>();
-        var user = (User) auth.getPrincipal();//take care
-        claims.put("fullName", user.fullName());
-        var jwtAccessToken = jwtService.generateToken(claims, user, false);
+//        var user = (User) auth.getPrincipal();//take care
+        claims.put("fullName", storedUser.fullName());
+        var jwtAccessToken = jwtService.generateToken(claims, storedUser, false);
         List<RefreshToken> storedRefreshTokens = refreshTokenService.findByUserEmail(encryptedEmail);
         if (storedRefreshTokens.size() > 0) {
             refreshTokenService.deleteExistingUserRefreshTokens(storedRefreshTokens);
 //            throw new RuntimeException("You might be logged from a different device. Please logout of that device first.");
         }
-        var refreshToken = refreshTokenService.createRefreshToken(user).getJwtRefreshToken();
+        var refreshToken = refreshTokenService.createRefreshToken(storedUser).getJwtRefreshToken();
         if (!isSSLEnabled) {
             ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                     .httpOnly(true)

@@ -1,5 +1,6 @@
 package com.intouch.IntouchApps.user;
 
+import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Table(name = "RefreshToken_TBL")
-public class RefreshToken {
+public class RefreshToken extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
