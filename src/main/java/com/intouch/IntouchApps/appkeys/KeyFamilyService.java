@@ -24,7 +24,7 @@ public class KeyFamilyService {
     @Autowired
     private KeyFamilyDefaultMapper keyFamilyDefaultMapper;
     @Transactional
-    public KeyFamily addKeyBasics(AppKeyRequest appKeyRequest) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    public KeyFamilyDefaultDTO addKeyBasics(AppKeyRequest appKeyRequest) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         KeyFamily keyFamily = keyFamilyRepository.findByKeyFamilyId(appKeyRequest.getKeyFamilyId()).orElseThrow(() -> new RuntimeException("Some thing went wrong"));
         AppKey appKey = AppKey.builder()
                 .keyId(appKeyRequest.getKeyId())
@@ -65,7 +65,8 @@ public class KeyFamilyService {
         }
 
         KeyFamily persistedKeyFamily = keyFamilyRepository.save(keyFamily);
-        return persistedKeyFamily;
+       return keyFamilyDefaultMapper.toKeyFamilyDefaultDTO(persistedKeyFamily);
+//        return persistedKeyFamily;
     }
 
     private KeyFamily linkAppKeyToKeyFamily(KeyFamily keyFamily, AppKey appKey, Integer keyId) {

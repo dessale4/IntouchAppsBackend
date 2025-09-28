@@ -16,7 +16,7 @@ public class KeyFamilyController {
     private final KeyFamilyService keyFamilyService;
     @PostMapping("/addKeyBasics")
     @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
-    public KeyFamily addKeyBasics(@RequestBody AppKeyRequest AppKeyRequest) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+    public KeyFamilyDefaultDTO addKeyBasics(@RequestBody AppKeyRequest AppKeyRequest) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         return keyFamilyService.addKeyBasics(AppKeyRequest);
     }
 

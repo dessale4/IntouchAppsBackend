@@ -51,6 +51,7 @@ public class RefreshTokenService {
             throw new BadCredentialsException("You need to login again");
         }
     }
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void deleteByToken(String token) throws ParseException {
 
         RefreshToken storedRefreshToken = refreshTokenRepository.findByJwtRefreshToken(token).orElseThrow(() -> new AccessDeniedException("Authentication Failed"));
@@ -63,6 +64,7 @@ public class RefreshTokenService {
         token.setRevoked(true);
         refreshTokenRepository.save(token);
     }
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     public void deleteByUserEmail(String userEmail) {
         refreshTokenRepository.deleteByUserEmail(userEmail);
     }

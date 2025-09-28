@@ -5,6 +5,7 @@ docker-compose.yml
 Dockerfile
 dockerCommand.png
 dockerCommands.txt
+springBootProductionActions.txt
 hcpSavedProperties.txt
 referrenceNotes.txt
 src/main/java/com/intouch/IntouchApps/adminAccess

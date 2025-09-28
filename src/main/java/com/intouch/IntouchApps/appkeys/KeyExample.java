@@ -25,7 +25,8 @@ public class KeyExample extends BaseEntity {
     private String category;
     private Integer keyId;
     private Integer keyFamilyId;
-    @JsonProperty
+    @JsonProperty("isDefault") // For JSON serialization/deserialization
+    @Column(name = "is_default") // For JPA column mapping
     private boolean isDefault;
     private String imageUrl;
     @Column(unique = true)

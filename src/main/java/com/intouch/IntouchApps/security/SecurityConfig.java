@@ -21,12 +21,14 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 public class SecurityConfig {
     private final AuthenticationProvider authenticationProvider;
     private final JwtFilter jwtAuthFilter;
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception{
-            http
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .requiresChannel(channel -> channel.anyRequest().requiresSecure())// Enforce HTTPS for all requests
                 .cors(withDefaults())//enforces CorsFilter bean config
                 .csrf(AbstractHttpConfigurer::disable)
-                .authorizeHttpRequests(req->
+                .authorizeHttpRequests(req ->
                         req.requestMatchers(
                                         "auth/**",
                                         "/v2/api-docs",
@@ -43,8 +45,8 @@ public class SecurityConfig {
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
-                        )
-                .sessionManagement(session->session.sessionCreationPolicy(STATELESS))
+                )
+                .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

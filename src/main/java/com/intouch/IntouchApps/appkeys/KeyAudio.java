@@ -1,5 +1,6 @@
 package com.intouch.IntouchApps.appkeys;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,7 +22,9 @@ public class KeyAudio extends BaseEntity {
     private String keyAudioUrl;
     @Column(unique = true)
     private String keyAudioFileName;
-
+    @JsonProperty("isDefault") // For JSON serialization/deserialization
+    @Column(name = "is_default") // For JPA column mapping
     private boolean isDefault;
+    //keyAudioTimeStamp is used in cases where keyAudio is played from defaultKeyFamilyAudio
     private String keyAudioTimeStamp;
 }

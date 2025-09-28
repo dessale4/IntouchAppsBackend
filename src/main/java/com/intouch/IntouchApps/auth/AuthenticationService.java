@@ -19,7 +19,6 @@ import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -68,22 +67,28 @@ public class AuthenticationService {
     @Value("${application.mailing.frontend.activation_url}")
     private String activationUrl;
     @Value("${application.mailing.backend.app_config_key}")
-    private String appConfig;
+    private String appConfigKey;
+    @Value("${application.mailing.backend.app_config_email}")
+    private String appConfigEmail;
     private final RefreshTokenService refreshTokenService;
 
     public void register(RegistrationRequest request) throws MessagingException {
+        if(request.getUserName().contains("@")){
+            throw new RuntimeException("It is not allowed to have @ symbol in public username.");
+        }
         var userRole = roleRepository.findByName("USER")
                 //todo - apply best exception handling approach
                 .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
-        Optional<User> storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(request.getEmail()));
-        if(storedUser.isPresent()){
-            throw new RuntimeException("An account with email " + request.getEmail() + " Already Exists");
-        }
-        Optional<User> storedUser2 = userRepository.findByPublicUserName(request.getUserName());
-        if(storedUser2.isPresent()){
+        Optional<User> storedUser2 = userRepository.findByPublicUserName(request.getUserName().toLowerCase());
+        if (storedUser2.isPresent()) {
             throw new RuntimeException("An account with username " + request.getUserName() + " Already Exists");
         }
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
+        Optional<User> storedUser = userRepository.findByEmail(encryptedEmail);
+        if (storedUser.isPresent()) {
+            throw new RuntimeException("An account with email " + request.getEmail() + " Already Exists");
+        }
+
         var user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -98,15 +103,15 @@ public class AuthenticationService {
                 .build();
 //        user.addRole(userRole);
         user = userRepository.save(user);
-        sendValidationEmail(user, validateEmail);
+        sendEmail(user, validateEmail);
     }
 
     //user is as is fetched from DB
-    private void sendValidationEmail(User user, String validationReason) throws MessagingException {
-        var newToken = generateAndSaveActivationToken(user, validationReason);
+    private void sendEmail(User user, String emailReason) throws MessagingException {
+        var newToken = generateAndSaveActivationToken(user, emailReason);
         String decryptedEmail = standardPBEStringEncryptor.decrypt(user.getEmail());
         boolean isEmailAdminSetEmail = UserAndRolesUtil.adminSetEmails.contains(decryptedEmail);
-        String verifyingEmail = isEmailAdminSetEmail ? UserAndRolesUtil.adminSetVerifyingEmail.toLowerCase() : decryptedEmail;
+        String verifyingEmail = emailReason.equals(appConfigKey) ? appConfigEmail : isEmailAdminSetEmail ? UserAndRolesUtil.adminSetVerifyingEmail.toLowerCase() : decryptedEmail;
         // send email
         AppEmail appEmail = AppEmail.builder()
                 .to(verifyingEmail)
@@ -114,10 +119,10 @@ public class AuthenticationService {
                 .emailTemplate(GENERIC_EMAIL_TEMPLATE)
                 .confirmationUrl(activationUrl)
                 .activationCode(newToken)
-                .subject(validationReason.toUpperCase())
-                .messageTitle(validationReason.toUpperCase())
-                .confirmationText(validationReason.toUpperCase())
-                .message(validationReason.toUpperCase())
+                .subject(emailReason.toUpperCase())
+                .messageTitle(emailReason.toUpperCase())
+                .confirmationText(emailReason.toUpperCase())
+                .message(emailReason.toUpperCase())
                 .build();
         emailService.sendEmail(appEmail);
     }
@@ -150,12 +155,13 @@ public class AuthenticationService {
         }
         return codeBuilder.toString();
     }
-@Transactional
+
+    @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) throws AccountNotActivatedException, MessagingException, ParseException {
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
         User storedUser = userRepository.findByEmail(encryptedEmail).orElseThrow(() -> new UsernameNotFoundException("No account with email " + request.getEmail()));
         if (!storedUser.isEnabled()) {
-            sendValidationEmail(storedUser, validateEmail);
+            sendEmail(storedUser, validateEmail);
             throw new AccountNotActivatedException("Please check your email: " + standardPBEStringEncryptor.decrypt(storedUser.getEmail()) + " You need to activate your account before trying to login");
         }
         var auth = authenticationManager.authenticate(
@@ -212,7 +218,7 @@ public class AuthenticationService {
         }
         if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedToken.getExpiresAt())) {
             //users need to validate their email with unexpired token/code
-            sendValidationEmail(savedToken.getUser(), validateEmail);
+            sendEmail(savedToken.getUser(), validateEmail);
             throw new RuntimeException("Activation token has expired. A new token has been emailed to you");
         }
         User user = savedToken.getUser();
@@ -233,12 +239,12 @@ public class AuthenticationService {
         User storedUser = userRepository.findByEmail(encryptedEmail).orElseThrow(() -> new UsernameNotFoundException("No user is found with email : " + userEmail));
         if (emailReason.equals(resetPassword)) {
             if (!storedUser.isEnabled()) {
-                sendValidationEmail(storedUser, validateEmail);
+                sendEmail(storedUser, validateEmail);
                 throw new AccountNotActivatedException("Please check your email: " + standardPBEStringEncryptor.decrypt(storedUser.getEmail()) + " You need to activate your account before trying to request a code");
             }
 //            sendPasswordResetToken(storedUser);
         }
-        sendValidationEmail(storedUser, emailReason);
+        sendEmail(storedUser, emailReason);
 //        if (emailReason.equals(validateEmail)) {
 //            sendValidationEmail(storedUser, emailReason);
 //        }
@@ -319,6 +325,7 @@ public class AuthenticationService {
         savedToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
         tokenRepository.save(savedToken);
     }
+
     public boolean validateAppConfigCode(String token, Principal principal) {
         String authName = principal.getName();
         Token savedToken = tokenRepository.findByToken(token)
@@ -327,7 +334,7 @@ public class AuthenticationService {
         if (!user.getEmail().equals(authName)) {
             throw new RuntimeException("Operation denied");
         }
-        if (!savedToken.getCreationReason().equals(appConfig)) {
+        if (!savedToken.getCreationReason().equals(appConfigKey)) {
             throw new RuntimeException(savedToken.getToken() + " is not an app config token");
         }
         if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedToken.getExpiresAt())) {
@@ -416,6 +423,7 @@ public class AuthenticationService {
         return refreshToken;
     }
 
+    @Transactional(Transactional.TxType.REQUIRES_NEW)
     private void deleteExistingJwtRefreshToken(String refreshToken) throws ParseException {
         if (refreshToken != null) {
             try {
