@@ -48,7 +48,7 @@ public class RefreshTokenService {
         if(isTokenValid){
             return storedRefreshToken;
         }else{
-            throw new BadCredentialsException("You need to login again");
+            throw new RuntimeException("You need to login again");
         }
     }
     @Transactional(Transactional.TxType.REQUIRES_NEW)

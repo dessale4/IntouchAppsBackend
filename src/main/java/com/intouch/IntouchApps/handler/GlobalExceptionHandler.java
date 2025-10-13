@@ -28,20 +28,6 @@ import static org.springframework.http.HttpStatus.*;
 @RestControllerAdvice
 @Component
 public class GlobalExceptionHandler {
-
-@ExceptionHandler(RuntimeException.class)
-public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
-//    System.out.println("RuntimeException thrown ===>");
-    return ResponseEntity
-            .status(INTERNAL_SERVER_ERROR)
-            .body(
-                    ExceptionResponse.builder()
-                            .businessErrorCode(APPLICATION_ERROR.getCode())
-                            .businessErrorDescription(APPLICATION_ERROR.getDescription())
-                            .error(exp.getMessage())
-                            .build()
-            );
-}
     @ExceptionHandler(LockedException.class)
     public ResponseEntity<ExceptionResponse> handleException(LockedException exp){
 //        System.out.println("LockedException thrown ===>");
@@ -76,7 +62,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
                 .body(
                         ExceptionResponse.builder()
                                 .businessErrorCode(ACCOUNT_NOT_FOUND.getCode())
-                                .businessErrorDescription(ACCOUNT_NOT_FOUND.getDescription())
+                                .businessErrorDescription(exp.getMessage())
                                 .error(exp.getMessage())
                                 .build()
                 );
@@ -103,7 +89,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
                 .body(
                         ExceptionResponse.builder()
                                 .businessErrorCode(ACCESS_DENIED_EXCEPTION.getCode())
-                                .businessErrorDescription(ACCESS_DENIED_EXCEPTION.getDescription())
+                                .businessErrorDescription(exp.getMessage())
                                 .error(exp.getMessage())
                                 .build()
                 );
@@ -129,7 +115,7 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
                 .body(
                         ExceptionResponse.builder()
                                 .businessErrorCode(ACCOUNT_NOT_ACTIVATED.getCode())
-                                .businessErrorDescription(ACCOUNT_NOT_ACTIVATED.getDescription())
+                                .businessErrorDescription(exp.getMessage())
                                 .error(exp.getMessage())
                                 .build()
                 );
@@ -201,6 +187,19 @@ public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
                                 .businessErrorDescription("Duplicate entry found.")
                                 .error("Your entry to " + failedField + " is taken")
 //                                .error(cause.getErrorMessage())
+                                .build()
+                );
+    }
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
+//    System.out.println("RuntimeException thrown ===>");
+        return ResponseEntity
+                .status(INTERNAL_SERVER_ERROR)
+                .body(
+                        ExceptionResponse.builder()
+                                .businessErrorCode(APPLICATION_ERROR.getCode())
+                                .businessErrorDescription(exp.getMessage())
+                                .error(exp.getMessage())
                                 .build()
                 );
     }
