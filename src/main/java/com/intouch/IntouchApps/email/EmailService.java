@@ -23,28 +23,30 @@ import static org.springframework.mail.javamail.MimeMessageHelper.MULTIPART_MODE
 @RequiredArgsConstructor
 @Transactional
 public class EmailService {
-    private  final JavaMailSender mailSender;
-//    private  final SpringTemplateEngine templateEngine;
+    private final JavaMailSender mailSender;
+    //    private  final SpringTemplateEngine templateEngine;
     private final SpringTemplateEngine templateEngine;
+
     // something to be added
     @Async
-    public void sendEmail( AppEmail appEmail) throws MessagingException , SendFailedException {
+// This method need to be called from outside this class only as methods annotated with @Async need to be called by outside class only
+    public void sendEmail(AppEmail appEmail) throws MessagingException, SendFailedException {
         String templateName;
-        if(appEmail.getEmailTemplate() == null){
+        if (appEmail.getEmailTemplate() == null) {
             templateName = "confirm_email";
-        }else {
+        } else {
             templateName = appEmail.getEmailTemplate().name().toLowerCase();
         }
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(
-            mimeMessage,
+                mimeMessage,
                 MULTIPART_MODE_MIXED,
                 UTF_8.name()
         );
         Map<String, Object> properties = new HashMap<>();
-        properties.put("username",appEmail.getUsername());
-        properties.put("confirmation_url",appEmail.getConfirmationUrl());
-        properties.put("activation_code",appEmail.getActivationCode());
+        properties.put("username", appEmail.getUsername());
+        properties.put("confirmation_url", appEmail.getConfirmationUrl());
+        properties.put("activation_code", appEmail.getActivationCode());
         properties.put("email_title", appEmail.getMessageTitle());
         properties.put("email_message", appEmail.getMessage());
         properties.put("confirmation_text", appEmail.getConfirmationText());

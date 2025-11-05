@@ -31,7 +31,7 @@
 <!--			<groupId>org.springframework.cloud</groupId>-->
 <!--			<artifactId>spring-cloud-context</artifactId>-->
 <!--		</dependency>-->
-<!--        &lt;!&ndash;		enables the bootstrap.yml file and @RefreshScope annotation &ndash;&gt;-->
+        <!--        &lt;!&ndash;		enables the bootstrap.yml file and @RefreshScope annotation &ndash;&gt;-->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-bootstrap</artifactId>

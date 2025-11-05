@@ -6,7 +6,7 @@ import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-//@Data
+@Data
 @Getter
 @Setter
 @Builder
