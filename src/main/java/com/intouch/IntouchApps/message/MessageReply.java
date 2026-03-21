@@ -5,20 +5,13 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import lombok.*;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-
-//@Getter
-//@Setter
-@Data
-@Builder
-@AllArgsConstructor
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "MessageReply_TBL")
 //@EntityListeners(AuditingEntityListener.class)

@@ -11,12 +11,13 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-@Data
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "Roles_TBL")
 //@EntityListeners(AuditingEntityListener.class)

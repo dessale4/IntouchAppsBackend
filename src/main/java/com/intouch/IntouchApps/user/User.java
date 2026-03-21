@@ -18,15 +18,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-@Data
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "Users_TBL")
-
 public class User implements UserDetails, Principal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,7 +52,7 @@ public class User implements UserDetails, Principal {
     private Set<Role> roles = new HashSet<>();//No role at first
 //    private boolean isSubscribed;
 //    private LocalDateTime subscriptionEndDate;
-    @Override
+    @Override//From interface: Principal Returns the name of this principal
     public String getName() {
         return email;
     }

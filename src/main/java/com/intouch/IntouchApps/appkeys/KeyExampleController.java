@@ -2,6 +2,7 @@ package com.intouch.IntouchApps.appkeys;
 
 import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -33,5 +34,12 @@ public class KeyExampleController {
     @GetMapping("/keyExamplesOfAKey")
     public List<KeyExample> getKeyExamplesForAKey(@RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("keyId")Integer keyId){
         return keyExampleService.getKeyExamplesForAKey(keyFamilyId, keyId);
+    }
+    @DeleteMapping("/deleteKeyExample")
+    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    public ResponseEntity<?> deleteKeyExample(@RequestParam Integer keyFamilyId, @RequestParam Integer keyExampleId, @RequestParam Integer keyId){
+
+        keyExampleService.deleteKeyExample(keyFamilyId, keyExampleId, keyId);
+        return ResponseEntity.ok("KeyExample deleted successfully.");
     }
 }

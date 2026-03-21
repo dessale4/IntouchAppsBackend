@@ -3,6 +3,7 @@ package com.intouch.IntouchApps.auth;
 import com.intouch.IntouchApps.email.AppEmail;
 import com.intouch.IntouchApps.email.EmailService;
 import com.intouch.IntouchApps.handler.AccountNotActivatedException;
+import com.intouch.IntouchApps.role.Role;
 import com.intouch.IntouchApps.role.RoleRepository;
 import com.intouch.IntouchApps.security.JwtService;
 //import com.intouch.IntouchApps.security.StringEncryptConverter;
@@ -73,10 +74,10 @@ public class AuthenticationService {
     private final RefreshTokenService refreshTokenService;
 
     public void register(RegistrationRequest request) throws MessagingException {
-        if(request.getUserName().contains("@")){
-            throw new RuntimeException("It is not allowed to have @ symbol in public username.");
-        }
-        var userRole = roleRepository.findByName("USER")
+//        if(request.getUserName().contains("@")){
+//            throw new RuntimeException("It is not allowed to have @ symbol in public username.");
+//        }
+        Role userRole = roleRepository.findByName("USER")
                 //todo - apply best exception handling approach
                 .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
         Optional<User> storedUser2 = userRepository.findByPublicUserName(request.getUserName().toLowerCase());

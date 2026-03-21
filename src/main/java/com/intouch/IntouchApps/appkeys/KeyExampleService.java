@@ -3,9 +3,10 @@ package com.intouch.IntouchApps.appkeys;
 import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
 import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultMapper;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -19,8 +20,10 @@ public class KeyExampleService {
     private final AppKeyRepository appKeyRepository;
     private final KeyFamilyDefaultMapper keyFamilyDefaultMapper;
     private final KeyFamilyRepository keyFamilyRepository;
+    private final KeyFamilyService keyFamilyService;
 
     @Transactional
+    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
     public AppKey addKeyExample(KeyExample keyExample) {
         AppKey savedAppKey = appKeyRepository.findAppKeyByKeyFamilyIdAndKeyId(keyExample.getKeyFamilyId(), keyExample.getKeyId()).orElseThrow(() -> new RuntimeException("Some thing went wrong"));
 
@@ -36,7 +39,9 @@ public class KeyExampleService {
             existingDefaultKeyExample.setDefault(false);
             keyExampleRepository.save(existingDefaultKeyExample);
 //            savedAppKey.setDefaultKeyExample(keyExample);
-            savedAppKey.addKeyExample(keyExample);
+//            savedAppKey.addKeyExample(existingDefaultKeyExample);
+//            savedAppKey.addKeyExample(keyExample);
+            keyExampleRepository.save(keyExample);
             savedAppKey = appKeyRepository.save(savedAppKey);
         } else {
             savedAppKey.addKeyExample(keyExample);
@@ -46,6 +51,7 @@ public class KeyExampleService {
     }
 
     @Transactional
+    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
     public KeyFamilyDefaultDTO editKeyExample(Integer keyFamilyId, Integer keyExampleId, Map<String, Object> keyExample) {
         KeyExample existingKeyExample = keyExampleRepository.findById(keyExampleId).orElseThrow(() -> new EntityNotFoundException("The keyExample not found"));
         keyExample.forEach((k, v) -> {
@@ -65,7 +71,7 @@ public class KeyExampleService {
         KeyFamily updatedKeyFamily = keyFamilyRepository.findByKeyFamilyId(keyFamilyId).orElseThrow(() -> new EntityNotFoundException("KeyFamily not found"));
         return keyFamilyDefaultMapper.toKeyFamilyDefaultDTO(updatedKeyFamily);
     }
-
+    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
     public AppKey setAsDefaultExample(Integer keyFamilyId, Integer keyId, Integer keyExampleId) {
         KeyExample savedKeyExample = keyExampleRepository.findById(keyExampleId).orElseThrow(() -> new RuntimeException("No key Example found with id: " + keyExampleId));
         AppKey savedAppKey = appKeyRepository.findAppKeyByKeyFamilyIdAndKeyId(keyFamilyId, keyId).orElseThrow(() -> new RuntimeException("AppKey Not found"));
@@ -82,4 +88,17 @@ public class KeyExampleService {
     public List<KeyExample> getKeyExamplesForAKey(Integer keyFamilyId, Integer keyId) {
         return keyExampleRepository.findByKeyFamilyIdAndKeyId(keyFamilyId, keyId);
     }
+
+    @Transactional
+    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
+    public void deleteKeyExample(Integer keyFamilyId, Integer keyExampleId, Integer keyId) {
+        try {
+            AppKey savedAppKey = appKeyRepository.findAppKeyByKeyFamilyIdAndKeyId(keyFamilyId, keyId).orElseThrow(() -> new RuntimeException("Some thing went wrong"));
+            savedAppKey.getKeyExamples().removeIf(k -> k.getId().equals(keyExampleId));
+        } catch (Exception ex) {
+            throw new RuntimeException(ex.getMessage());
+        }
+
+    }
+
 }

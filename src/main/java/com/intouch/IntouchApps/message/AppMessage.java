@@ -16,13 +16,13 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-
-//@Getter
-//@Setter
-@Data
-@Builder
-@AllArgsConstructor
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "AppMessage_TBL")
 //@EntityListeners(AuditingEntityListener.class)

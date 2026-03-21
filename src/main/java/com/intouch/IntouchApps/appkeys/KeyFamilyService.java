@@ -3,11 +3,16 @@ package com.intouch.IntouchApps.appkeys;
 import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
 import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultMapper;
 import com.intouch.IntouchApps.utils.AppObjectMapper;
-import jakarta.transaction.Transactional;
+//import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -23,7 +28,9 @@ public class KeyFamilyService {
     private final AppObjectMapper appObjectMapper;
     @Autowired
     private KeyFamilyDefaultMapper keyFamilyDefaultMapper;
+
     @Transactional
+    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
     public KeyFamilyDefaultDTO addKeyBasics(AppKeyRequest appKeyRequest) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         KeyFamily keyFamily = keyFamilyRepository.findByKeyFamilyId(appKeyRequest.getKeyFamilyId()).orElseThrow(() -> new RuntimeException("Some thing went wrong"));
         AppKey appKey = AppKey.builder()
@@ -65,7 +72,7 @@ public class KeyFamilyService {
         }
 
         KeyFamily persistedKeyFamily = keyFamilyRepository.save(keyFamily);
-       return keyFamilyDefaultMapper.toKeyFamilyDefaultDTO(persistedKeyFamily);
+        return keyFamilyDefaultMapper.toKeyFamilyDefaultDTO(persistedKeyFamily);
 //        return persistedKeyFamily;
     }
 
@@ -112,21 +119,25 @@ public class KeyFamilyService {
         return decryptedKeyFamilies;
     }
 
-//    public List<KeyFamilyResponse> getKeyFamiliesWithDefaultExamples() {
+    //    public List<KeyFamilyResponse> getKeyFamiliesWithDefaultExamples() {
 //        Sort sort = Sort.by(Sort.Direction.ASC, "keyFamilyId");
 //        List<KeyFamily> keyFamilyList = keyFamilyRepository.findAll(sort);
 //        return keyFamilyList.stream()
 //                .map((kf) -> appObjectMapper.mapKeyFamilyToKeyFamilyResponse(kf))
 //                .collect(Collectors.toList());
 //    }
-public List<KeyFamilyDefaultDTO> getKeyFamiliesWithDefaultExamples() {
-    Sort sort = Sort.by(Sort.Direction.ASC, "keyFamilyId");
-    List<KeyFamily> keyFamilyList = keyFamilyRepository.findAll(sort);
-    return keyFamilyList.stream()
-            .map((kf) -> keyFamilyDefaultMapper.toKeyFamilyDefaultDTO(kf))
-            .collect(Collectors.toList());
-}
+    @Transactional
+    @Cacheable(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'") //spring boot to manage req and res of method using AOP
+    public List<KeyFamilyDefaultDTO> getKeyFamiliesWithDefaultExamples() {
+        System.out.println("getKeyFamiliesWithDefaultExamples called");
+        Sort sort = Sort.by(Sort.Direction.ASC, "keyFamilyId");
+        List<KeyFamily> keyFamilyList = keyFamilyRepository.findAll(sort);
+        return keyFamilyList.stream()
+                .map((kf) -> keyFamilyDefaultMapper.toKeyFamilyDefaultDTO(kf))
+                .collect(Collectors.toList());
+    }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public KeyFamilyDefaultDTO getKeyFamilyWithDefaultExamples(Integer keyFamilyId) {
         KeyFamily storedkeyFamily = keyFamilyRepository.findByKeyFamilyId(keyFamilyId).orElseThrow(() -> new RuntimeException("No key family found with keyFamilyId: " + keyFamilyId));
 //        return appObjectMapper.mapKeyFamilyToKeyFamilyResponse(storedkeyFamily);

@@ -1,8 +1,10 @@
 package com.intouch.IntouchApps.appkeys;
 
 import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
+import io.micrometer.observation.annotation.Observed;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,6 +33,7 @@ public class KeyFamilyController {
 //        return keyFamilyService.getKeyFamiliesWithDefaultExamples();
 //    }
 @GetMapping("/getKeyFamiliesWithDefaultExamples")
+@Observed(name = "getKeyFamiliesWithDefaultExamples")
 public List<KeyFamilyDefaultDTO> getKeyFamiliesWithDefaultExamples(){
 
     return keyFamilyService.getKeyFamiliesWithDefaultExamples();

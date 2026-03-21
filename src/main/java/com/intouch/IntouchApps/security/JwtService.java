@@ -1,6 +1,7 @@
 package com.intouch.IntouchApps.security;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -11,6 +12,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.SecretKey;
 import java.security.Key;
 import java.text.ParseException;
 import java.util.Base64;
@@ -29,6 +31,7 @@ public class JwtService {
     private long jwtExpiration;
     @Value("${application.security.jwt.refresh_token.secret_key}")
     private String refreshTokenSecretKey;
+
     @Value("${application.security.jwt.refresh_token.expiration}")
     private long refreshTokenExpiration;
 
@@ -44,16 +47,41 @@ public class JwtService {
 
     private Claims extractAllClaims(String token, boolean isRefreshJwtToken) {
         Key signInKey = getSignInKey(isRefreshJwtToken);
+//        return Jwts.parser()
+//                .setSigningKey(signInKey)
+//                .build()
+//                .parseClaimsJws(token)
+//                .getBody();
+        token = normalizeToken(token);
+
         return Jwts.parser()
-                .setSigningKey(signInKey)
+                .verifyWith((SecretKey) signInKey)          // SecretKey (HMAC)
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)       // signed JWT (JWS)
+                .getPayload();
+    }
+
+    private String normalizeToken(String token) {
+        if (token == null) throw new JwtException("Missing token");
+        token = token.trim();
+
+        // remove accidental template braces
+        if (token.startsWith("{{") && token.endsWith("}}")) {
+            token = token.substring(2, token.length() - 2).trim();
+        }
+
+        // hard reject any remaining braces
+        if (token.indexOf('{') >= 0 || token.indexOf('}') >= 0) {
+            throw new JwtException("Malformed token (contains braces)");
+        }
+
+        return token;
     }
 
     public String generateToken(UserDetails userDetails, boolean isRefreshJwtToken) throws ParseException {
         return generateToken(new HashMap<>(), userDetails, isRefreshJwtToken);
     }
+
     public String generateToken(Map<String, Object> claims, UserDetails userDetails, boolean isRefreshJwtToken) throws ParseException {
 //        System.out.println("generateToken called");
         return buildToken(claims, userDetails

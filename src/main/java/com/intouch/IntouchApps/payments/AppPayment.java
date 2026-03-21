@@ -2,13 +2,16 @@ package com.intouch.IntouchApps.payments;
 
 import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.math.BigDecimal;
-@Data
-@AllArgsConstructor
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "AppPayment_TBL")
 public class AppPayment extends BaseEntity {

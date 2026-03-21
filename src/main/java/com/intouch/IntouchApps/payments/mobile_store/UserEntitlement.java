@@ -2,20 +2,19 @@ package com.intouch.IntouchApps.payments.mobile_store;
 
 import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-
-@Entity
-@Data
-@AllArgsConstructor
+@Getter
+@Setter
 @NoArgsConstructor
-@Table(name="UserEntitlement_TBL")
+@AllArgsConstructor
 @Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Entity
+@Table(name="UserEntitlement_TBL")
 public class UserEntitlement extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

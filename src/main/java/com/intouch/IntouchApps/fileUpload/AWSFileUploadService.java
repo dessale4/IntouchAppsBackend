@@ -9,6 +9,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,6 +43,7 @@ public class AWSFileUploadService {
     private final StandardPBEStringEncryptor standardPBEStringEncryptor;
     private final AppObjectMapper appObjectMapper;
     private final KeyFamilyAudioRepository keyFamilyAudioRepository;
+    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
     public KeyExample uploadKeyExampleImage(MultipartFile file, Integer keyFamilyId, Integer keyId, Integer exampleId, String folderName){
         KeyExample storedKeyExample = keyExampleRepository.findById(exampleId).orElseThrow(() -> new RuntimeException("No key example found with id " + exampleId));
         if(storedKeyExample.getKeyId() !=keyId || storedKeyExample.getKeyFamilyId() != keyFamilyId){
@@ -63,6 +65,7 @@ public class AWSFileUploadService {
         }
         return storedKeyExample;
     }
+    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
     public KeyExample uploadKeyExampleAudio(MultipartFile file, Integer keyFamilyId, Integer keyId, Integer exampleId, String folderName){
 
         KeyExample storedKeyExample = keyExampleRepository.findById(exampleId).orElseThrow(() -> new RuntimeException("No key example found with id " + exampleId));
@@ -87,6 +90,7 @@ public class AWSFileUploadService {
         }
         return storedKeyExample;
     }
+    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
     public AppKey uploadKeyAudio(MultipartFile file, Integer keyFamilyId, Integer keyId, String folderName) {
         AppKey storedAppKey = appKeyRepository.findAppKeyByKeyFamilyIdAndKeyId(keyFamilyId, keyId).orElseThrow(() -> new RuntimeException("AppKey not found"));
         String awsFileName = file.getOriginalFilename();
@@ -146,6 +150,7 @@ public class AWSFileUploadService {
 
         return uploadedFile.toString();
     }
+    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
     public String uploadFile(MultipartFile file, String fileFolderLocation, String contentType) throws IOException {
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(awsS3BucketName)
@@ -184,6 +189,7 @@ public class AWSFileUploadService {
             throw new RuntimeException(e.getMessage());
         }
     }
+    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
     public KeyFamilyDefaultDTO uploadKeyFamilyAudio(MultipartFile file, Integer keyFamilyId, String folderName) {
         KeyFamily storedKeyFamily = keyFamilyRepository.findByKeyFamilyId(keyFamilyId).orElseThrow(() -> new RuntimeException("KeyFamily not found with keyFamilyId: " + keyFamilyId));
         String keyFamilyFileName = file.getOriginalFilename();

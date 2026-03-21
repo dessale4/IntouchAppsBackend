@@ -18,9 +18,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 //import java.security.SignatureException;
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 import static com.intouch.IntouchApps.handler.BusinessErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
@@ -29,7 +27,7 @@ import static org.springframework.http.HttpStatus.*;
 @Component
 public class GlobalExceptionHandler {
     @ExceptionHandler(LockedException.class)
-    public ResponseEntity<ExceptionResponse> handleException(LockedException exp){
+    public ResponseEntity<ExceptionResponse> handleException(LockedException exp) {
 //        System.out.println("LockedException thrown ===>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
@@ -41,8 +39,9 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
     @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<ExceptionResponse> handleException(BadCredentialsException exp){
+    public ResponseEntity<ExceptionResponse> handleException(BadCredentialsException exp) {
 //        System.out.println("BadCredentialsException thrown ===>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
@@ -54,8 +53,9 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
     @ExceptionHandler(UsernameNotFoundException.class)
-    public ResponseEntity<ExceptionResponse> handleException(UsernameNotFoundException exp){
+    public ResponseEntity<ExceptionResponse> handleException(UsernameNotFoundException exp) {
 //        System.out.println("UsernameNotFoundException thrown ===>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
@@ -69,8 +69,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(SignatureException.class)
-    public ResponseEntity<ExceptionResponse> handleException(SignatureException exp){
-//        System.out.println("SignatureException thrown ===>");
+    public ResponseEntity<ExceptionResponse> handleException(SignatureException exp) {
         return ResponseEntity
                 .status(UNAUTHORIZED)
                 .body(
@@ -81,8 +80,9 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ExceptionResponse> handleException(AccessDeniedException exp){
+    public ResponseEntity<ExceptionResponse> handleException(AccessDeniedException exp) {
 //        System.out.println("AccessDeniedException thrown ===>");
         return ResponseEntity
                 .status(FORBIDDEN)
@@ -94,9 +94,10 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
     @ExceptionHandler(ExpiredJwtException.class)
-    public ResponseEntity<ExceptionResponse> handleException(ExpiredJwtException exp){
-//        System.out.println("ExpiredJwtException thrown ===>");
+    public ResponseEntity<ExceptionResponse> handleException(ExpiredJwtException exp) {
+
         return ResponseEntity
                 .status(UNAUTHORIZED)
                 .body(
@@ -107,8 +108,9 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
     @ExceptionHandler(AccountNotActivatedException.class)
-    public ResponseEntity<ExceptionResponse> handleException(AccountNotActivatedException exp){
+    public ResponseEntity<ExceptionResponse> handleException(AccountNotActivatedException exp) {
 //        System.out.println("AccountNotActivatedException thrown ===>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
@@ -120,8 +122,9 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
     @ExceptionHandler(MessagingException.class)
-    public ResponseEntity<ExceptionResponse> handleException(MessagingException exp){
+    public ResponseEntity<ExceptionResponse> handleException(MessagingException exp) {
 //        System.out.println("MessagingException thrown ===>");
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
@@ -131,10 +134,11 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseBody
-    public ResponseEntity<ExceptionResponse> handleException(MethodArgumentNotValidException exp){
-//        System.out.println("MethodArgumentNotValidException thrown ===>");
+    public ResponseEntity<ExceptionResponse> handleException(MethodArgumentNotValidException exp) {
+        System.out.println("MethodArgumentNotValidException thrown ===>");
         Set<String> errors = new HashSet<>();
         exp.getBindingResult()
                 .getAllErrors()
@@ -150,9 +154,27 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
+    //    @ExceptionHandler(MethodArgumentNotValidException.class)//alternative
+//    @ResponseBody
+    public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException exp) {
+        System.out.println("handleMethodArgumentNotValidException called");
+        Map<String, String> errors = new HashMap<>();
+        exp.getBindingResult()
+                .getFieldErrors()
+                .forEach(error -> {
+                    errors.put(error.getField(), error.getDefaultMessage());
+                });
+        return ResponseEntity
+                .status(BAD_REQUEST)
+                .body(
+                        errors
+                );
+    }
+
     @ExceptionHandler(AWSFileUploadException.class)
     @ResponseBody
-    public ResponseEntity<ExceptionResponse> handleException(AWSFileUploadException exp){
+    public ResponseEntity<ExceptionResponse> handleException(AWSFileUploadException exp) {
 //        System.out.println("AWSFileUploadException thrown ===>");
         exp.printStackTrace();
         return ResponseEntity
@@ -165,6 +187,7 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseBody
     public ResponseEntity<ExceptionResponse> handleDuplicateKeyException(DataIntegrityViolationException exp) {
@@ -172,9 +195,9 @@ public class GlobalExceptionHandler {
         ConstraintViolationException cause = (ConstraintViolationException) exp.getCause();
         String failedField = cause.getConstraintName();
         try {
-            String[] failedFieldArr= failedField.split("_");
+            String[] failedFieldArr = failedField.split("_");
             failedField = failedFieldArr[2];
-        }catch (Exception ex){
+        } catch (Exception ex) {
 
         }
 
@@ -190,8 +213,9 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp){
+    public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp) {
 //    System.out.println("RuntimeException thrown ===>");
         return ResponseEntity
                 .status(INTERNAL_SERVER_ERROR)
@@ -203,9 +227,10 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
     @ExceptionHandler(Exception.class)
     @ResponseBody
-    public ResponseEntity<ExceptionResponse> handleException(Exception exp){
+    public ResponseEntity<ExceptionResponse> handleException(Exception exp) {
         // todo log the exception
 //        System.out.println("Generic Exception thrown ===>");
         exp.printStackTrace();

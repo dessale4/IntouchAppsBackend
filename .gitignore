@@ -8,6 +8,7 @@ dockerCommands.txt
 springBootProductionActions.txt
 hcpSavedProperties.txt
 referrenceNotes.txt
+redisclicommands.txt
 src/main/java/com/intouch/IntouchApps/adminAccess
 src/main/java/com/intouch/IntouchApps/utils/JasyptEncryptionUtil.java
 src/main/java/com/intouch/IntouchApps/utils/UserAndRolesUtil.java

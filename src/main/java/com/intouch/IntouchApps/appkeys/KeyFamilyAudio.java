@@ -5,12 +5,13 @@ import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-//@Data
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "KeyFamilyAudio_TBL")
 public class KeyFamilyAudio extends BaseEntity {

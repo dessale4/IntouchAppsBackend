@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -35,11 +36,13 @@ import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 public class JwtFilter extends OncePerRequestFilter {
     @Autowired
     private JwtService jwtService;
+    @Value("${server.servlet.context-path}")
+    private String serverContextPath;
     @Autowired
     private UserDetailsService userDetailsService;
     @Autowired
     @Qualifier("handlerExceptionResolver")
-    private HandlerExceptionResolver exceptionResolver;
+    private HandlerExceptionResolver exceptionResolver;//forwards the thrown exception to GlobalExceptionHandler
 
     @Override
     protected void doFilterInternal(
@@ -47,9 +50,9 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-//        System.out.println("current ServletPath =>" + request.getServletPath());
+        System.out.println(request.getHeader(AUTHORIZATION) + " current ServletPath =>" + request.getServletPath());
         if (request.getServletPath().contains("/auth/")) {
-            log.info("authentication is not required");
+            log.info("authentication is not required => " + request.getServletPath());
             filterChain.doFilter(request, response);
             return;
         }
@@ -58,16 +61,24 @@ public class JwtFilter extends OncePerRequestFilter {
         final String userEmail;
         try {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
+//                System.out.println("authHeader ==> " + request.getServletPath());
                 jwt = authHeader.substring(7);
             } else if (request.getCookies() != null) {
+//                System.out.println("request.getCookies ==> " + request.getServletPath());
                 jwt = Arrays.stream(request.getCookies())
                         .filter(c -> c.getName().equals("jwt"))
                         .findFirst()
                         .map(Cookie::getValue)
                         .orElse(null);
+//                System.out.println(jwt + "is request jwt cookie for ==> " + request.getServletPath());
             } else {
-                log.info("not a jwt Auth");
-                filterChain.doFilter(request, response);
+                log.info("not a jwt Auth => " + request.getServletPath());
+                exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed"));
+                return;
+            }
+            if (jwt == null || jwt.isEmpty() || jwt.isBlank()) {
+                log.info("jwt not found => " + request.getServletPath());
+                exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed"));
                 return;
             }
 //            System.out.println("RequestURL : " + request.getRequestURL());
@@ -87,13 +98,23 @@ public class JwtFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 } else {
                     log.info("not a valid jwt");
-                    filterChain.doFilter(request, response);
+                    exceptionResolver.resolveException(request, response, null, new RuntimeException("Not a valid jwt token"));
                     return;
                 }
+            }else if(userEmail == null){
+                log.info("userEmail not found => ");
+                exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed"));
+                return;
             }
             filterChain.doFilter(request, response);
-        } catch (ExpiredJwtException | SignatureException | ParseException ex) {
+        } catch ( ExpiredJwtException | SignatureException | ParseException ex) {
             exceptionResolver.resolveException(request, response, null, ex);
         }
     }
+//    @Override
+//    protected boolean shouldNotFilter(HttpServletRequest req) {
+//        String p = req.getServletPath();
+//        return p.equals("/actuator") || p.startsWith("/actuator/");
+//    }
+
 }

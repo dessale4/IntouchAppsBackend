@@ -2,18 +2,17 @@ package com.intouch.IntouchApps.user;
 
 import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
-
-@Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Entity
 @Table(name = "RefreshToken_TBL")
 public class RefreshToken extends BaseEntity {
     @Id

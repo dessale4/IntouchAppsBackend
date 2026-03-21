@@ -6,12 +6,13 @@ import lombok.*;
 import java.util.HashSet;
 import java.util.Set;
 
-//@Data
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "KeyFamily_TBL")
 public class KeyFamily {

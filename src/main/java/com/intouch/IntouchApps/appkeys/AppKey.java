@@ -12,12 +12,13 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 import java.util.*;
 
-//@Data
 @Getter
 @Setter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "AppKey_TBL")
 //@EntityListeners(AuditingEntityListener.class)
@@ -31,7 +32,7 @@ public class AppKey extends BaseEntity {
     @Column(unique = true)
     private String keyName;
     private String keyNameInEnglish;
-    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<KeyExample> keyExamples = new HashSet<>();
 //    @OneToOne(cascade = CascadeType.ALL)
 //    private KeyExample defaultKeyExample;

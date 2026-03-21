@@ -2,18 +2,19 @@ package com.intouch.IntouchApps.user;
 
 import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
-@Data
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+//@ToString(exclude = "userRoles")
+//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "Subscription_TBL")
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 public class Subscription extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

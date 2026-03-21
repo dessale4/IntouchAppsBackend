@@ -15,6 +15,7 @@ import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
@@ -30,6 +31,7 @@ import java.util.stream.IntStream;
 
 @RefreshScope// helps to update envs if they got updated at runtime
 @SpringBootApplication
+@EnableCaching  //sets up a cache manager and creates in-memory cache using concurrent hashmap
 @EnableJpaAuditing //helps in auto date entry and auto date modification of entities
 @EnableAsync
 @EnableEncryptableProperties //to enable jasypt encryption
@@ -46,7 +48,6 @@ public class IntouchAppsApplication {
 //    private long jwtExpiration;
 
     public static void main(String[] args) {
-
         SpringApplication.run(IntouchAppsApplication.class, args);
     }
     @PostConstruct
