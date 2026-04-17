@@ -4,6 +4,7 @@ import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 @Getter
 @Setter
@@ -27,8 +28,8 @@ public class MessageReply  extends BaseEntity {
     @NotEmpty
     private String sendingUsername;
     @Lob
-//    @Size(max = 500)
+    @Size(max = 500)
     @NotBlank
-    @NotEmpty
+//    @NotEmpty
     private String message;
 }

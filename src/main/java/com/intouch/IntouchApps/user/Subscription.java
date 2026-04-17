@@ -4,6 +4,7 @@ import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Getter
@@ -24,7 +25,7 @@ public class Subscription extends BaseEntity {
     @Column(nullable = false)
     private String subscriptionProductName;
     @Column(nullable = false)
-    private LocalDateTime expirationDate;
+    private Instant expirationDate;
     private String noteOnUpdate;
     private Integer productPurchaseCount;
 

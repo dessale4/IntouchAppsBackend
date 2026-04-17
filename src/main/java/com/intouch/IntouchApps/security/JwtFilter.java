@@ -1,5 +1,8 @@
 package com.intouch.IntouchApps.security;
 
+import com.intouch.IntouchApps.constants.ClientType;
+import com.intouch.IntouchApps.constants.CustomHeaders;
+import com.intouch.IntouchApps.enums.JwtTokenType;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -29,6 +32,7 @@ import java.util.Arrays;
 
 import io.jsonwebtoken.security.SignatureException;
 
+import static com.intouch.IntouchApps.constants.CustomHeaders.CLIENT_TYPE;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @Service
@@ -50,8 +54,13 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        System.out.println(request.getHeader(AUTHORIZATION) + " current ServletPath =>" + request.getServletPath());
-        if (request.getServletPath().contains("/auth/")) {
+        final String clientTypeHeader = request.getHeader(CLIENT_TYPE);
+        if(!(clientTypeHeader.equals(ClientType.MOBILE_CLIENT) || clientTypeHeader.equals(ClientType.WEB_CLIENT))){
+            log.info("not an allowed client type => " + clientTypeHeader +"<====>"+request.getServletPath());
+            exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed now"));
+            return;
+        }
+        if (request.getServletPath().startsWith("/auth/")) {
             log.info("authentication is not required => " + request.getServletPath());
             filterChain.doFilter(request, response);
             return;
@@ -59,6 +68,10 @@ public class JwtFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader(AUTHORIZATION);
         final String jwt;
         final String userEmail;
+        //this happens when jwtRefreshToken expired and logout retried
+        if(clientTypeHeader.equals(ClientType.MOBILE_CLIENT) && request.getServletPath().equals("/appUsers/logout") && authHeader == null){
+           return;
+        }
         try {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
 //                System.out.println("authHeader ==> " + request.getServletPath());
@@ -72,6 +85,7 @@ public class JwtFilter extends OncePerRequestFilter {
                         .orElse(null);
 //                System.out.println(jwt + "is request jwt cookie for ==> " + request.getServletPath());
             } else {
+
                 log.info("not a jwt Auth => " + request.getServletPath());
                 exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed"));
                 return;
@@ -81,33 +95,31 @@ public class JwtFilter extends OncePerRequestFilter {
                 exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed"));
                 return;
             }
-//            System.out.println("RequestURL : " + request.getRequestURL());
-//            byte[] bytes = request.getHeader("Authorization").getBytes(StandardCharsets.UTF_8);
-//            System.out.println(Arrays.toString(bytes));
-//            System.out.println("JWT during request : " + jwt);
-            userEmail = jwtService.extractUsername(jwt, false);
-//            System.out.println("userEmail ===>" + userEmail);
+
+            userEmail = jwtService.extractUsername(jwt, JwtTokenType.ACCESS);
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
-
-                if (jwtService.isTokenValid(jwt, userDetails, false)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails, null, userDetails.getAuthorities()
-                    );
+                if (jwtService.isTokenValid(jwt, userDetails, JwtTokenType.ACCESS)) {
+                    UsernamePasswordAuthenticationToken authToken =
+                            new UsernamePasswordAuthenticationToken(
+                                    userDetails, null, userDetails.getAuthorities()
+                            );
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 } else {
                     log.info("not a valid jwt");
-                    exceptionResolver.resolveException(request, response, null, new RuntimeException("Not a valid jwt token"));
+                    exceptionResolver.resolveException(request, response, null,
+                            new RuntimeException("Not a valid jwt token"));
                     return;
                 }
-            }else if(userEmail == null){
+            } else if (userEmail == null) {
                 log.info("userEmail not found => ");
-                exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed"));
+                exceptionResolver.resolveException(request, response, null,
+                        new RuntimeException("Access not allowed"));
                 return;
             }
             filterChain.doFilter(request, response);
-        } catch ( ExpiredJwtException | SignatureException | ParseException ex) {
+        } catch ( ExpiredJwtException | SignatureException ex) {
             exceptionResolver.resolveException(request, response, null, ex);
         }
     }

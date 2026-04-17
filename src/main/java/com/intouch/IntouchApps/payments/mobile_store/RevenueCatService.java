@@ -36,8 +36,8 @@ public class RevenueCatService {
     }
 
     public ResponseEntity<String> verifyPurchase(IAPRequest payload) throws JsonProcessingException {
-        System.out.println("===IAPRequest===");
-        System.out.println(payload);
+//        System.out.println("===IAPRequest===");
+//        System.out.println(payload);
 
 //        String subscriberInfo = getSubscriberInfo(payload.getAppUserId());
         String transactionInfo = getPurchaseByTransactionId(payload.getTransactionId());

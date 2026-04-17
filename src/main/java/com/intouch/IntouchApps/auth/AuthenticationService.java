@@ -1,44 +1,54 @@
 package com.intouch.IntouchApps.auth;
 
+import com.intouch.IntouchApps.config.RequestMetadataContext;
+import com.intouch.IntouchApps.constants.ClientType;
+import com.intouch.IntouchApps.constants.RoleConstants;
 import com.intouch.IntouchApps.email.AppEmail;
 import com.intouch.IntouchApps.email.EmailService;
+import com.intouch.IntouchApps.enums.JwtTokenType;
 import com.intouch.IntouchApps.handler.AccountNotActivatedException;
 import com.intouch.IntouchApps.role.Role;
 import com.intouch.IntouchApps.role.RoleRepository;
+import com.intouch.IntouchApps.security.CustomUserDetails;
 import com.intouch.IntouchApps.security.JwtService;
-//import com.intouch.IntouchApps.security.StringEncryptConverter;
 import com.intouch.IntouchApps.user.*;
 import com.intouch.IntouchApps.utils.AppDateUtil;
+import com.intouch.IntouchApps.utils.AppPhoneUtil;
 import com.intouch.IntouchApps.utils.PatternUtil;
 import com.intouch.IntouchApps.utils.UserAndRolesUtil;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.Principal;
 import java.security.SecureRandom;
 import java.text.ParseException;
 import java.time.Duration;
-import java.util.*;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import static com.intouch.IntouchApps.email.EmailTemplateName.GENERIC_EMAIL_TEMPLATE;
-import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.HttpHeaders.SET_COOKIE;
 
 @Service
@@ -56,7 +66,9 @@ public class AuthenticationService {
     private final JwtService jwtService;
 
     private final RefreshTokenRepository refreshTokenRepository;
-
+    private final UserRoleRepository userRoleRepository;
+    private final AgePolicyService agePolicyService;
+    private final RequestMetadataContext requestMetadataContext;
     @Value("${application.mailing.backend.email_validation_key}")
     private String validateEmail;
     @Value("${server.ssl.enabled:false}")
@@ -74,37 +86,59 @@ public class AuthenticationService {
     private final RefreshTokenService refreshTokenService;
 
     public void register(RegistrationRequest request) throws MessagingException {
-//        if(request.getUserName().contains("@")){
-//            throw new RuntimeException("It is not allowed to have @ symbol in public username.");
-//        }
-        Role userRole = roleRepository.findByName("USER")
-                //todo - apply best exception handling approach
-                .orElseThrow(() -> new IllegalStateException("ROLE USER was not initialized"));
-        Optional<User> storedUser2 = userRepository.findByPublicUserName(request.getUserName().toLowerCase());
-        if (storedUser2.isPresent()) {
-            throw new RuntimeException("An account with username " + request.getUserName() + " Already Exists");
+        String normalizedPhone = null;
+        try {
+            normalizedPhone = AppPhoneUtil.normalizeToE164OrNull(request.getPhoneNumber());
+        } catch (IllegalArgumentException ex) {
+            throw new RuntimeException("Please enter a valid phone number including country code.");
+        }
+        if (request.getUserName().contains("@")) {
+            throw new RuntimeException("It is not allowed to have @ symbol in public userName.");
         }
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
-        Optional<User> storedUser = userRepository.findByEmail(encryptedEmail);
-        if (storedUser.isPresent()) {
-            throw new RuntimeException("An account with email " + request.getEmail() + " Already Exists");
+        if (userRepository.existsByEmail(encryptedEmail)) {
+            throw new RuntimeException(String.format("An account with email  %s already exists.", request.getEmail()));
+        }
+        if (userRepository.existsByUserName(request.getUserName().toLowerCase())) {
+            throw new RuntimeException(String.format("An account with userName  %s already exists.", request.getUserName()));
+        }
+        AgePolicyResponse agePolicy = agePolicyService.evaluate(request.getDateOfBirth());
+
+        if (!agePolicy.canRegister()) {
+            throw new IllegalArgumentException("You must be at least 13 years old to create an account");
         }
 
-        var user = User.builder()
+        User user = User.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
+                .phoneNumber(normalizedPhone)
                 .email(encryptedEmail)
-                .publicUserName(request.getUserName().toLowerCase())
+                .userName(request.getUserName().toLowerCase())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .dateOfBirth(request.getDateOfBirth())
                 .accountLocked(false)
+                .dobVerified(true)
                 .enabled(false)
-                .roles(Set.of(userRole))
                 .createdDate(AppDateUtil.getCurrentUTCLocalDateTime())
                 .lastModifiedDate(AppDateUtil.getCurrentUTCLocalDateTime())
                 .build();
-//        user.addRole(userRole);
+
         user = userRepository.save(user);
+        assignDefaultUserRole(user);
         sendEmail(user, validateEmail);
+    }
+
+    private void assignDefaultUserRole(User user) {
+        Role userRole = roleRepository.findByName(RoleConstants.ROLE_USER)
+                .orElseThrow(() -> new RuntimeException("Something went wrong"));
+        UserRole assignment = UserRole.builder()
+                .user(user)
+                .role(userRole)
+                .assignedBy("SYSTEM")
+                .assignedAt(Instant.now())
+                .active(true)
+                .build();
+        userRoleRepository.save(assignment);
     }
 
     //user is as is fetched from DB
@@ -131,14 +165,14 @@ public class AuthenticationService {
     private String generateAndSaveActivationToken(User user, String tokenSendingReason) {
         //generate a token
         String generatedToken = generateActivationCode(6);
-        var token = Token.builder()
+        var token = VerificationToken.builder()
                 .token(generatedToken)
                 .createdAt(AppDateUtil.getCurrentUTCLocalDateTime())
-                .expiresAt(AppDateUtil.getCurrentUTCLocalDateTime().plusMinutes(15))
+                .expiresAt(AppDateUtil.getCurrentUTCLocalDateTime().plus(15, ChronoUnit.MINUTES))
                 .user(user)
                 .creationReason(tokenSendingReason)
                 .build();
-        Optional<Token> existingToken = tokenRepository.findByCreationReasonAndUserEmail(tokenSendingReason, user.getEmail());
+        Optional<VerificationToken> existingToken = tokenRepository.findByCreationReasonAndUserEmail(tokenSendingReason, user.getEmail());
         if (existingToken.isPresent()) {
             tokenRepository.delete(existingToken.get());
         }
@@ -159,74 +193,79 @@ public class AuthenticationService {
 
     @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) throws AccountNotActivatedException, MessagingException, ParseException {
+        String requestClientType = requestMetadataContext.getClientType();
+        if (!(requestClientType.equals(ClientType.WEB_CLIENT) || requestClientType.equals(ClientType.MOBILE_CLIENT))) {
+            throw new RuntimeException("Not allowed to do so");
+        }
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
-        User storedUser = userRepository.findByEmail(encryptedEmail).orElseThrow(() -> new UsernameNotFoundException("No account with email " + request.getEmail()));
+        User storedUser = userRepository.findByEmailWithActiveRoles(encryptedEmail).orElseThrow(() -> new UsernameNotFoundException("No account with email " + request.getEmail()));
         if (!storedUser.isEnabled()) {
             sendEmail(storedUser, validateEmail);
-            throw new AccountNotActivatedException("Please check your email: " + standardPBEStringEncryptor.decrypt(storedUser.getEmail()) + " You need to activate your account before trying to login");
+            throw new AccountNotActivatedException("Please check your email: " + standardPBEStringEncryptor.decrypt(storedUser.getEmail()) + " You need to activate your account before trying to login.");
         }
-        var auth = authenticationManager.authenticate(
+        if (storedUser.getRequestedAccountClosure()) {
+            throw new IllegalStateException("You have closed your Account. Contact us to activate it again.");
+        }
+        Authentication auth = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         encryptedEmail,
                         request.getPassword()
                 )
         );
-        var claims = new HashMap<String, Object>();
-//        var user = (User) auth.getPrincipal();//take care
-        claims.put("fullName", storedUser.fullName());
-        var jwtAccessToken = jwtService.generateToken(claims, storedUser, false);
-        List<RefreshToken> storedRefreshTokens = refreshTokenService.findByUserEmail(encryptedEmail);
-        if (storedRefreshTokens.size() > 0) {
-            refreshTokenService.deleteExistingUserRefreshTokens(storedRefreshTokens);
-//            throw new RuntimeException("You might be logged from a different device. Please logout of that device first.");
-        }
-        var refreshToken = refreshTokenService.createRefreshToken(storedUser).getJwtRefreshToken();
-        if (!isSSLEnabled) {
+
+        CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
+        String jwtAccessToken = jwtService.generateToken(principal, JwtTokenType.ACCESS);
+        refreshTokenService.deleteExistingUserRefreshTokens(storedUser);
+        String refreshToken = refreshTokenService.createRefreshToken(storedUser).getJwtRefreshToken();
+        boolean isWebClient = requestClientType.equals(ClientType.WEB_CLIENT);
+
+        if (isWebClient) {
             ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                     .httpOnly(true)
-                    .secure(false)        // dev only (HTTP)
-                    .sameSite("Lax")      // fine for localhost same-site
+                    .secure(isSSLEnabled) //set false for dev only (HTTP)
+                    .sameSite(isSSLEnabled ? "None" : "Lax") //"Lax" fine for localhost same-site
                     .path("/")
                     .maxAge(Duration.ofDays(7))
                     .build();
 
             response.addHeader(SET_COOKIE, refreshCookie.toString());
-        } else {
-            //For Production Set Refresh Token in HttpOnly Cookie
-            Cookie refreshCookie = new Cookie("refreshToken", refreshToken);
-            refreshCookie.setHttpOnly(true);
-            refreshCookie.setSecure(true);
-            refreshCookie.setPath("/");
-            refreshCookie.setMaxAge(7 * 24 * 60 * 60); // 7 days
-            response.addCookie(refreshCookie);
         }
-//        System.out.println("JWT during generation : " + jwtAccessToken);
-//        System.out.println("JWT refreshtoken during generation : " + refreshToken);
+
+        AgePolicyResponse agePolicy = storedUser.getDateOfBirth() != null ? agePolicyService.evaluate(storedUser.getDateOfBirth()) : null;
+        if (agePolicy != null) {
+            //update the last time user logged in to system
+            storedUser.setLastLoginAt(Instant.now());
+            userRepository.save(storedUser);
+        }
         return AuthenticationResponse.builder()
                 .jwtToken(jwtAccessToken)
-                .jwtRefreshToken(refreshToken)
+                .jwtRefreshToken(isWebClient ? null : refreshToken)
+                .agePolicy(agePolicy)
+//                .tokenType("Bearer")
+//                .accessTokenExpiresIn(jwtService.getExpirationMs(JwtTokenType.ACCESS) / 1000)
+//                .refreshTokenExpiresIn(jwtService.getExpirationMs(JwtTokenType.REFRESH) / 1000)
                 .build();
     }
 
     @Transactional
     public String activateAccount(String token, String userEmail) throws MessagingException {
-        //better to include username in searching token
-        Token savedToken = tokenRepository.findByTokenAndUserEmail(token, standardPBEStringEncryptor.encrypt(userEmail.toLowerCase()))
+        //better to include userName in searching token
+        VerificationToken savedVerificationToken = tokenRepository.findByTokenAndUserEmail(token, standardPBEStringEncryptor.encrypt(userEmail.toLowerCase()))
                 // todo better exception handling needed here
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
-        if (!savedToken.getCreationReason().equals(validateEmail)) {
-            throw new RuntimeException(savedToken.getToken() + " is not email validation token");
+        if (!savedVerificationToken.getCreationReason().equals(validateEmail)) {
+            throw new RuntimeException(savedVerificationToken.getToken() + " is not email validation token");
         }
-        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedToken.getExpiresAt())) {
+        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedVerificationToken.getExpiresAt())) {
             //users need to validate their email with unexpired token/code
-            sendEmail(savedToken.getUser(), validateEmail);
+            sendEmail(savedVerificationToken.getUser(), validateEmail);
             throw new RuntimeException("Activation token has expired. A new token has been emailed to you");
         }
-        User user = savedToken.getUser();
+        User user = savedVerificationToken.getUser();
         user.setEnabled(true);
-        savedToken.setUser(user);
-        savedToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
-        tokenRepository.save(savedToken);
+        savedVerificationToken.setUser(user);
+        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
+        tokenRepository.save(savedVerificationToken);
         return "Email Confirmed Successfully";
     }
 
@@ -241,38 +280,11 @@ public class AuthenticationService {
         if (emailReason.equals(resetPassword)) {
             if (!storedUser.isEnabled()) {
                 sendEmail(storedUser, validateEmail);
-                throw new AccountNotActivatedException("Please check your email: " + standardPBEStringEncryptor.decrypt(storedUser.getEmail()) + " You need to activate your account before trying to request a code");
+                throw new AccountNotActivatedException("Please check your email: " + standardPBEStringEncryptor.decrypt(storedUser.getEmail()) + " You need to activate your account before proceeding here.");
             }
-//            sendPasswordResetToken(storedUser);
         }
         sendEmail(storedUser, emailReason);
-//        if (emailReason.equals(validateEmail)) {
-//            sendValidationEmail(storedUser, emailReason);
-//        }
-//        if (emailReason.equals(deleteAccountEmail)) {
-//            sendValidationEmail(storedUser, emailReason);
-//        }
-//        if (emailReason.equals(appConfig)) {
-//            sendValidationEmail(storedUser, emailReason);
-//        }
     }
-
-//    private void sendPasswordResetToken(User storedUser) throws MessagingException {
-//        String passwordResetToken = generateAndSaveActivationToken(storedUser, resetPassword);
-//        String decryptedEmail = standardPBEStringEncryptor.decrypt(storedUser.getEmail());
-//        AppEmail appEmail = AppEmail.builder()
-//                .to(decryptedEmail)
-//                .username(storedUser.fullName())
-//                .emailTemplate(GENERIC_EMAIL_TEMPLATE)
-//                .confirmationUrl(activationUrl)
-//                .activationCode(passwordResetToken)
-//                .subject("Change Password")
-//                .messageTitle("Reset Password")
-//                .confirmationText("Reset your password")
-//                .message("change your password:")
-//                .build();
-//        emailService.sendEmail(appEmail);
-//    }
 
     public void resetPassword(AuthenticationRequest request) throws AccountNotActivatedException {
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
@@ -286,132 +298,178 @@ public class AuthenticationService {
     }
 
     public void validatePasswordResetCode(String token) throws MessagingException {
-        Token savedToken = tokenRepository.findByToken(token)
+        VerificationToken savedVerificationToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
-        if (!savedToken.getCreationReason().equals(resetPassword)) {
-            throw new RuntimeException(savedToken.getToken() + " is not password reset token");
+        if (!savedVerificationToken.getCreationReason().equals(resetPassword)) {
+            throw new RuntimeException(savedVerificationToken.getToken() + " is not password reset token");
         }
-        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedToken.getExpiresAt())) {
+        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedVerificationToken.getExpiresAt())) {
             throw new RuntimeException("PasswordReset token has expired. Please try again to reset your password");
         }
-        savedToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
-        tokenRepository.save(savedToken);
+        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
+        tokenRepository.save(savedVerificationToken);
     }
 
+    @Transactional
     public void deleteAccount(String email, Principal principal) {
         if (!standardPBEStringEncryptor.decrypt(principal.getName()).equals(email)) {
             throw new RuntimeException("Operation denied");
         }
         User savedUser = userRepository.findByEmail(principal.getName()).orElseThrow(() -> new RuntimeException("Account not found"));
-        List<Token> userTokenList = tokenRepository.findByUserEmail(principal.getName());
+        List<VerificationToken> userVerificationTokenList = tokenRepository.findByUserEmail(principal.getName());
         refreshTokenRepository.deleteByUserEmail(principal.getName());
-        tokenRepository.deleteAll(userTokenList);
-        userRepository.delete(savedUser);
+        tokenRepository.deleteAll(userVerificationTokenList);
+        savedUser.setRequestedAccountClosure(true);
+        savedUser.setLastModifiedDate(Instant.now());
+        savedUser.setAccountModifiedBy(savedUser.getUserName().toLowerCase());
+        userRepository.save(savedUser);
+        //
+//        SecurityContextHolder.getContext().setAuthentication(null);
     }
 
     public void validateAccountDeleteCode(String token, Principal principal) {
         String authName = principal.getName();
-        Token savedToken = tokenRepository.findByToken(token)
+        VerificationToken savedVerificationToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
-        User user = savedToken.getUser();
+        User user = savedVerificationToken.getUser();
         if (!user.getEmail().equals(authName)) {
             throw new RuntimeException("Operation denied");
         }
-        if (!savedToken.getCreationReason().equals(deleteAccountEmail)) {
-            throw new RuntimeException(savedToken.getToken() + " is not delete  account token");
+        if (!savedVerificationToken.getCreationReason().equals(deleteAccountEmail)) {
+            throw new RuntimeException(savedVerificationToken.getToken() + " is not delete  account token");
         }
-        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedToken.getExpiresAt())) {
+        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedVerificationToken.getExpiresAt())) {
             throw new RuntimeException("Account Delete token has been already expired.");
         }
-        savedToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
-        tokenRepository.save(savedToken);
+        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
+        tokenRepository.save(savedVerificationToken);
     }
 
     public boolean validateAppConfigCode(String token, Principal principal) {
         String authName = principal.getName();
-        Token savedToken = tokenRepository.findByToken(token)
+        VerificationToken savedVerificationToken = tokenRepository.findByToken(token)
                 .orElseThrow(() -> new RuntimeException("Invalid token"));
-        User user = savedToken.getUser();
+        User user = savedVerificationToken.getUser();
         if (!user.getEmail().equals(authName)) {
             throw new RuntimeException("Operation denied");
         }
-        if (!savedToken.getCreationReason().equals(appConfigKey)) {
-            throw new RuntimeException(savedToken.getToken() + " is not an app config token");
+        if (!savedVerificationToken.getCreationReason().equals(appConfigKey)) {
+            throw new RuntimeException(savedVerificationToken.getToken() + " is not an app config token");
         }
-        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedToken.getExpiresAt())) {
+        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedVerificationToken.getExpiresAt())) {
             throw new RuntimeException("App Config token has been already expired.");
         }
-        savedToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
-        tokenRepository.save(savedToken);
+        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
+        tokenRepository.save(savedVerificationToken);
         return true;
     }
 
-    public Object getJwtRefreshToken(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+    public ResponseEntity<?> getJwtRefreshToken(HttpServletRequest request, HttpServletResponse response) throws ParseException {
+        String clientType = requestMetadataContext.getClientType();
+        if (!(clientType.equals(ClientType.WEB_CLIENT) || clientType.equals(ClientType.MOBILE_CLIENT))) {
+            throw new RuntimeException("Not allowed to do so");
+        }
         String refreshToken = null;
-        // For Web (from cookie)
-        if (request.getCookies() != null) {
-            refreshToken = getCookieNameValueFromRequest("refreshToken", request);
-        }
-        // For Mobile (from header if needed)
-        if (refreshToken == null) {
-            String headerToken = request.getHeader(AUTHORIZATION);
-            if (headerToken != null && headerToken.startsWith("Bearer ")) {
-                refreshToken = (String) headerToken.substring(7);
-            }
-        }
-        if (refreshToken != null) {
-            RefreshToken storedRefreshToken = refreshTokenService.findByToken(refreshToken);
-            User refreshTokenUser = storedRefreshToken.getUser();
-            boolean isTokenValid = jwtService.isTokenValid(refreshToken, refreshTokenUser, true);
-            if (isTokenValid) {
-                //generate new access token for user
-                String username = jwtService.extractUsername(refreshToken, true);
-                Map claims = new HashMap();
-                claims.put("fullName", refreshTokenUser.fullName());
-                String newAccessToken = jwtService.generateToken(claims, refreshTokenUser, false);
-                return ResponseEntity.ok(Map.of("newAccessToken", newAccessToken));
-            }
-        }
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Refresh Token");
-    }
+        boolean isWebClient =
+                clientType.equals(ClientType.WEB_CLIENT);
 
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) throws ParseException {
-        String refreshToken = null;
-        if (request.getCookies() != null) {
+        // Web: refresh token from cookie
+        if (isWebClient && request.getCookies() != null) {
             refreshToken = getCookieNameValueFromRequest("refreshToken", request);
-            // in any way remove refreshtoken from user browser cookie
-            if (!isSSLEnabled) {
-                // For Web if using http not https
-                ResponseCookie clear = ResponseCookie.from("refreshToken", "")
-                        .httpOnly(true)
-                        .secure(false)
-                        .sameSite("Lax")
-                        .path("/")
-                        .maxAge(0)
-                        .build();
-                response.addHeader(SET_COOKIE, clear.toString());
-            } else {
-//        // For Web if using https not http
-                Cookie refreshCookie = new Cookie("refreshToken", null);
-                refreshCookie.setHttpOnly(true);
-                refreshCookie.setSecure(true);
-                refreshCookie.setPath("/");
-                refreshCookie.setMaxAge(0); // Expire immediately
-                response.addCookie(refreshCookie);
-            }
         }
-        // For Mobile (from header if needed)
-        if (refreshToken == null) {
-            String headerToken = request.getHeader(AUTHORIZATION);
+
+        // Mobile: currently from Authorization header
+        if (!isWebClient && refreshToken == null) {
+            String headerToken = request.getHeader(HttpHeaders.AUTHORIZATION);
             if (headerToken != null && headerToken.startsWith("Bearer ")) {
                 refreshToken = headerToken.substring(7);
             }
         }
-        if (refreshToken != null) {
-            deleteExistingJwtRefreshToken(refreshToken);
+
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Refresh token missing"));
         }
-        SecurityContextHolder.getContext().setAuthentication(null);
+
+        RefreshToken storedRefreshToken = refreshTokenService.findByToken(refreshToken);
+        if (storedRefreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid refresh token"));
+        }
+
+        User storedUser = storedRefreshToken.getUser();
+        CustomUserDetails customUserDetails = new CustomUserDetails(storedUser);
+
+        boolean isRefreshTokenValid =
+                jwtService.isTokenValid(refreshToken, customUserDetails, JwtTokenType.REFRESH);
+
+        if (!isRefreshTokenValid) {
+            refreshTokenService.deleteByToken(refreshToken);
+            clearRefreshCookie(response);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Invalid refresh token"));
+        }
+
+        // Rotate refresh token:
+        // 1. create new access token
+        // 2. create new refresh token
+        // 3. delete old refresh token
+        String newAccessToken = jwtService.generateToken(customUserDetails, JwtTokenType.ACCESS);
+        refreshTokenService.deleteExistingUserRefreshTokens(storedUser);
+        String newRefreshToken = refreshTokenService.createRefreshToken(storedUser).getJwtRefreshToken();
+
+//        refreshTokenService.deleteByToken(refreshToken);
+
+        // Web: set rotated refresh token in cookie
+        if (isWebClient) {
+            addRefreshCookie(response, newRefreshToken);
+        }
+        return ResponseEntity.ok(
+                AuthenticationResponse.builder()
+                        .jwtToken(newAccessToken)
+                        .jwtRefreshToken(isWebClient ? null : newRefreshToken)
+                        .build()
+        );
+    }
+    private void addRefreshCookie(HttpServletResponse response, String refreshToken) {
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
+                .httpOnly(true)
+                .secure(isSSLEnabled)
+                .sameSite(isSSLEnabled ? "None" : "Lax")
+                .path("/")
+                .maxAge(Duration.ofDays(7))
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+    }
+    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response,
+                                    Authentication authentication) throws ParseException {
+        clearRefreshCookie(response);
+        if (authentication != null && authentication.isAuthenticated()) {
+            String userEmail = authentication.getName();
+            User storedUser = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new UsernameNotFoundException(
+                            "Account not found"
+                    ));
+
+//            refreshTokenService.deleteAllByUser(storedUser);
+//            refreshTokenService.deleteByUserEmail(storedUser.getEmail());
+            refreshTokenService.deleteExistingUserRefreshTokens(storedUser);
+        }
+
+        SecurityContextHolder.clearContext();
+
         return ResponseEntity.ok(Map.of("message", "Logged out"));
+    }
+
+    private void clearRefreshCookie(HttpServletResponse response) {
+        ResponseCookie clearCookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(isSSLEnabled)
+                .sameSite(isSSLEnabled ? "None" : "Lax")
+                .path("/")
+                .maxAge(0)
+                .build();
+        response.addHeader(SET_COOKIE, clearCookie.toString());
     }
 
     private static String getCookieNameValueFromRequest(String cookieName, HttpServletRequest request) {
@@ -424,32 +482,12 @@ public class AuthenticationService {
         return refreshToken;
     }
 
-    @Transactional(Transactional.TxType.REQUIRES_NEW)
-    private void deleteExistingJwtRefreshToken(String refreshToken) throws ParseException {
-        if (refreshToken != null) {
-            try {
-//                delete refreshtokens of the user
-                String userEmail = jwtService.extractUsername(refreshToken, true);
-                refreshTokenService.deleteByUserEmail(userEmail);
-            } catch (Exception ex) {
-//                try to delete by token
-                refreshTokenService.deleteByToken(refreshToken);
-            }
-            //Delete refreshToken
-//            RefreshToken storedRefreshToken = refreshTokenService.findByToken(refreshToken);
-//            refreshTokenService.deleteByUserEmail(storedRefreshToken.getUser().getEmail());
-
-        } else {
-            throw new AccessDeniedException("Authentication Failed");
-        }
-    }
-
     public boolean doesUserExist(String userIdentity) {
         User storedUser;
         if (userIdentity.contains("@")) {
             storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(userIdentity.toLowerCase())).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
         } else {
-            storedUser = userRepository.findByPublicUserName(userIdentity.toLowerCase()).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
+            storedUser = userRepository.findByUserName(userIdentity.toLowerCase()).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
         }
         return storedUser == null ? false : true;
     }
@@ -459,7 +497,7 @@ public class AuthenticationService {
         if (userIdentity.contains("@")) {
             storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(userIdentity.toLowerCase())).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
         } else {
-            storedUser = userRepository.findByPublicUserName(userIdentity.toLowerCase()).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
+            storedUser = userRepository.findByUserName(userIdentity.toLowerCase()).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
         }
         return storedUser;
     }

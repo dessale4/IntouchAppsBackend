@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
@@ -19,5 +20,5 @@ public class MessageReplyDTO {
     private String sendingEmail;
     private String sendingUsername;
     private String message;
-    private LocalDateTime createdDate;
+    private Instant createdDate;
 }

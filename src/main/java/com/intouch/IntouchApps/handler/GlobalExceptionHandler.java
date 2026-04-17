@@ -96,8 +96,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ExpiredJwtException.class)
-    public ResponseEntity<ExceptionResponse> handleException(ExpiredJwtException exp) {
-
+    public ResponseEntity<ExceptionResponse> jwtExpiredException(ExpiredJwtException exp) {
+//        System.out.println("jwtExpiredException called ==>");
         return ResponseEntity
                 .status(UNAUTHORIZED)
                 .body(
@@ -113,7 +113,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ExceptionResponse> handleException(AccountNotActivatedException exp) {
 //        System.out.println("AccountNotActivatedException thrown ===>");
         return ResponseEntity
-                .status(UNAUTHORIZED)
+                .status(FORBIDDEN)
                 .body(
                         ExceptionResponse.builder()
                                 .businessErrorCode(ACCOUNT_NOT_ACTIVATED.getCode())
@@ -138,7 +138,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseBody
     public ResponseEntity<ExceptionResponse> handleException(MethodArgumentNotValidException exp) {
-        System.out.println("MethodArgumentNotValidException thrown ===>");
+//        System.out.println("MethodArgumentNotValidException thrown ===>");
         Set<String> errors = new HashSet<>();
         exp.getBindingResult()
                 .getAllErrors()
@@ -158,7 +158,7 @@ public class GlobalExceptionHandler {
     //    @ExceptionHandler(MethodArgumentNotValidException.class)//alternative
 //    @ResponseBody
     public ResponseEntity<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException exp) {
-        System.out.println("handleMethodArgumentNotValidException called");
+//        System.out.println("handleMethodArgumentNotValidException called");
         Map<String, String> errors = new HashMap<>();
         exp.getBindingResult()
                 .getFieldErrors()
@@ -214,6 +214,19 @@ public class GlobalExceptionHandler {
                 );
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ExceptionResponse> handleIllegalArgument(IllegalArgumentException ex) {
+//    System.out.println("IllegalArgumentException thrown ===>");
+        return ResponseEntity
+                .status(BAD_REQUEST)
+                .body(
+                        ExceptionResponse.builder()
+                                .businessErrorCode(ILLEGAL_REQUEST.getCode())
+                                .businessErrorDescription(ILLEGAL_REQUEST.getDescription())
+                                .error(ex.getMessage())
+                                .build()
+                );
+    }
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp) {
 //    System.out.println("RuntimeException thrown ===>");

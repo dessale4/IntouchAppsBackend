@@ -38,19 +38,13 @@ public class AppMessage extends BaseEntity {
     private String sendingUsername;
     private String receivingUsername;
     @Lob
-//    @Size(max = 500)
+    @Size(max = 500)
     @NotBlank
-    @NotEmpty
+//    @NotEmpty
     private String message;
     @ElementCollection
     @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
     private List<MessageReply> messageReplies = new ArrayList<>();
-//    @CreatedDate
-//    @Column(nullable = false, updatable = false)
-//    private LocalDateTime createdDate;
-////    @LastModifiedDate
-//    @Column(nullable = false)
-//    private LocalDateTime lastModifiedDate;
 
     public void addMessageReply(MessageReply messageReply){
         messageReplies.add(messageReply);

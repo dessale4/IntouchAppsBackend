@@ -12,13 +12,13 @@ import java.util.Set;
 public class KeyFamilyAudioController {
     private final KeyFamilyAudioService keyFamilyAudioService;
     @PostMapping("/setTimeStamps")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public KeyFamilyAudio setKeyFamilyAudioTimeStamps(@RequestBody KeyFamilyAudioTimeStamp keyFamilyAudioTimeStamp, @RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("keyFamilyAudioId") Integer keyFamilyAudioId){
        return keyFamilyAudioService.setKeFamilyAudioTimeStamps(keyFamilyAudioTimeStamp, keyFamilyId,keyFamilyAudioId);
     }
 
     @PostMapping("/setKeyFamilyAudioAsDefault")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public KeyFamilyAudio setKeyFamilyAudioAsDefault(@RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("keyFamilyAudioId") Integer keyFamilyAudioId){
         return keyFamilyAudioService.setKeyFamilyAudioAsDefault(keyFamilyId,keyFamilyAudioId);
     }

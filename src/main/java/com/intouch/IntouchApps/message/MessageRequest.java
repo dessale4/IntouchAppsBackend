@@ -4,6 +4,7 @@ import jakarta.persistence.Lob;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,8 +23,8 @@ public class MessageRequest {
     private String sendingUsername;
     private String receivingUsername;
 //    @Lob
-//    @Size(max = 500)
-    @NotEmpty(message = "Message is a required field")
+    @Size(max = 500)
+//    @NotEmpty(message = "Message is a required field")
     @NotBlank(message = "Message is a required field")
     private String message;
 }

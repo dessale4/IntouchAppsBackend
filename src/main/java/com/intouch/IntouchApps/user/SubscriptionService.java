@@ -6,7 +6,9 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -24,18 +26,18 @@ public class SubscriptionService {
 
     public Subscription createOrUpdateSubscription(String beneficiary, String subProductName, boolean isGift, String offeredBy, Integer addedDays) {
         User existingAppUser = authenticationService.existingAppUser(beneficiary);
-        Subscription subscription = findByNameAndUsername(subProductName, existingAppUser.getPublicUserName());
+        Subscription subscription = findByNameAndUsername(subProductName, existingAppUser.getUserName());
         if (subscription == null) {
             subscription = Subscription.builder()
-                    .ownerPublicUserName(existingAppUser.getPublicUserName())
+                    .ownerPublicUserName(existingAppUser.getUserName())
                     .subscriptionProductName(subProductName)
-                    .expirationDate(AppDateUtil.getCurrentUTCLocalDateTime().plusDays(addedDays))
+                    .expirationDate(AppDateUtil.getCurrentUTCLocalDateTime().plus(addedDays, ChronoUnit.DAYS))
                     .noteOnUpdate(isGift ? "Gift from " + offeredBy : "First Self Subscription")
                     .productPurchaseCount(1)
                     .build();
             subscriptionRepository.save(subscription);
         }else{
-            LocalDateTime subExpirationDate = subscription.getExpirationDate().isAfter(AppDateUtil.getCurrentUTCLocalDateTime()) ? subscription.getExpirationDate().plusDays(addedDays) : AppDateUtil.getCurrentUTCLocalDateTime().plusDays(addedDays);
+            Instant subExpirationDate = subscription.getExpirationDate().isAfter(AppDateUtil.getCurrentUTCLocalDateTime()) ? subscription.getExpirationDate().plus(addedDays, ChronoUnit.DAYS) : AppDateUtil.getCurrentUTCLocalDateTime().plus(addedDays, ChronoUnit.DAYS);
             subscription.setExpirationDate(subExpirationDate);
             subscription.setNoteOnUpdate(isGift ? "Gift from " + offeredBy : "Self Subscription Renewal");
             subscription.setProductPurchaseCount(subscription.getProductPurchaseCount() + 1);

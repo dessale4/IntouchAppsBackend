@@ -6,6 +6,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.temporal.ChronoUnit;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -36,7 +38,7 @@ public class EntitlementService {
                 .purchaserPublicUserName(payload.getPurchaserPublicUserName())
                 .isAGift(payload.getIsAGift())
                 .beneficiary(payload.getBeneficiary())
-                .expirationDate(AppDateUtil.getCurrentUTCLocalDateTime().plusDays(payload.getNoOfDaysToAccess()))
+                .expirationDate(AppDateUtil.getCurrentUTCLocalDateTime().plus(payload.getNoOfDaysToAccess(), ChronoUnit.DAYS))
                 .active(true)
                 .build();
         if(isValidTransaction){

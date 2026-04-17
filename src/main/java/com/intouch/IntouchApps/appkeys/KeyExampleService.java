@@ -94,7 +94,12 @@ public class KeyExampleService {
     public void deleteKeyExample(Integer keyFamilyId, Integer keyExampleId, Integer keyId) {
         try {
             AppKey savedAppKey = appKeyRepository.findAppKeyByKeyFamilyIdAndKeyId(keyFamilyId, keyId).orElseThrow(() -> new RuntimeException("Some thing went wrong"));
-            savedAppKey.getKeyExamples().removeIf(k -> k.getId().equals(keyExampleId));
+            KeyExample savedKeyExample = savedAppKey.getKeyExamples().stream().filter(ke -> ke.getId() == keyExampleId).findFirst().orElseThrow(() -> new RuntimeException("KeyExample not found."));
+            if(savedKeyExample.isDefault()){
+                throw new RuntimeException("Default key examples are not allowed for deletion.");
+            }
+//            keyExampleRepository.delete(savedKeyExample);//this does not work for the current orm mapping
+            savedAppKey.getKeyExamples().removeIf(k -> k.getId().equals(keyExampleId) && !k.isDefault());
         } catch (Exception ex) {
             throw new RuntimeException(ex.getMessage());
         }

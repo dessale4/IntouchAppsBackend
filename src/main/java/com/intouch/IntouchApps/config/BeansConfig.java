@@ -1,5 +1,6 @@
 package com.intouch.IntouchApps.config;
 
+import com.intouch.IntouchApps.constants.CustomHeaders;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
@@ -20,6 +21,8 @@ import org.springframework.web.filter.CorsFilter;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.intouch.IntouchApps.constants.CustomHeaders.CLIENT_TYPE;
+import static com.intouch.IntouchApps.constants.CustomHeaders.CONFIG_CODE;
 import static org.springframework.http.HttpHeaders.*;
 
 @Configuration
@@ -28,35 +31,6 @@ import static org.springframework.http.HttpHeaders.*;
 public class BeansConfig {
     @Value("${application.corsAllowedOrigins}")
     private List<String> allowedOriginsList;
-    private final UserDetailsService userDetailsService;
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    //    @Bean
-//    public AuthenticationProvider authenticationProvider() {
-//        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-//        authProvider.setUserDetailsService(userDetailsService);
-//        authProvider.setPasswordEncoder(passwordEncoder());
-//        return authProvider;
-//    }
-    @Bean
-    public AuthenticationProvider daoAuthenticationProvider(
-            UserDetailsService userDetailsService,
-            PasswordEncoder passwordEncoder
-    ) {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService);
-        provider.setPasswordEncoder(passwordEncoder);
-        return provider;
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
-    }
-
     @Bean
     public CorsFilter corsFilter() {
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -69,14 +43,16 @@ public class BeansConfig {
                 CONTENT_TYPE,
                 ACCEPT,
                 AUTHORIZATION,
-                "CONFIG_CODE"
+                CONFIG_CODE,//using alt + enter shortcut
+                CLIENT_TYPE
         ));
         config.setAllowedMethods(Arrays.asList(
                 "GET",
                 "POST",
                 "DELETE",
                 "PUT",
-                "PATCH"
+                "PATCH",
+                "OPTIONS"
         ));
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);

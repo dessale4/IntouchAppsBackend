@@ -1,0 +1,37 @@
+#Common properties
+server:
+  port: 8088
+  servlet:
+    context-path: '/${API_CONTEXT_PATH:intouchApi}/v1/'
+  error:
+    include-message: always
+    include-binding-errors: always
+spring:
+  jackson:
+    time-zone: UTC
+  application:
+    name: InTouchApps
+  profiles:
+    active:
+      - prod
+  jpa:
+    properties:
+      hibernate.jdbc.time_zone: UTC
+      hibernate.format_sql: true
+    show-sql: true
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+  servlet:
+    multipart:
+      max-file-size: 10MB #for file upload capability
+      max-request-size: 10MB
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+springdoc:
+  default-produces-media-type: application/json #swagger documentation format
+
+
+

@@ -1,0 +1,106 @@
+#Common properties
+server:
+  ssl:
+    enabled: true
+    key-store: '${KEYSTORE_LOCATION}'
+    key-store-password: '${KEY_STORE_PASSWORD}'
+    key-store-type: PKCS12
+    key-alias: backend
+spring:
+  datasource:
+    url: 'jdbc:postgresql://${DB_HOST}:${DB_HOST_PORT}/${APP_DB_NAME}'
+    username: '${DB_USERNAME}'
+    password: '${DB_PASSWORD}'
+    hikari:
+      schema: '${SPRING_DATASOURCE_SCHEMA}' #please keep schema name all in lower case
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    generate-ddl: true
+    hibernate:
+      ddl-auto:  '${JPA_HIBERNATE_DDL_AUTO:update}' #validate for validating create-drop for dev and update for prod
+    show-sql: false #false better
+    properties:
+      hibernate:
+        default_schema: '${SPRING_DATASOURCE_DEFAULT_SCHEMA}' #please keep schema name all in lower case
+      format_sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  mail:
+    host: '${SPRING_MAIL_HOST}'
+    port: '${SPRING_MAIL_PORT}'
+    username: '${SPRING_MAIL_USERNAME}'
+    password: '${SPRING_MAIL_PASSWORD}'
+    properties:
+      mail:
+        smtp:
+          #      trust: "*"
+          auth: true
+          starttls:
+            enabled: true
+            required: true
+            timeout: 3000
+      write timeout: 5000
+      connection-timeout: 5000
+
+#Custom properties
+application:
+  security:
+    jwt:
+      secret_key: '${APPLICATION_SECURITY_JWT_SECRET_KEY}'
+      expiration:  '${APPLICATION_SECURITY_JWT_SECRET_KEY_EXPIRATION}'
+      refresh_token:
+        secret_key: '${APPLICATION_SECURITY_JWT_REFRESH_SECRET_KEY}'
+        expiration: '${APPLICATION_SECURITY_JWT_REFRESH_SECRET_KEY_EXPIRATION}'
+  encryption:
+    appConfigPassword: '${APP_CONFIG_ENCRYPTION_PASSWORD}'
+    appConfigAlgorithm: '${APP_CONFIG_ENCRYPTION_ALGORITHM}'
+    jasyptEncryptionAlgorithm: '${JASYPT_ENCRYPTION_ALGORITHM}'
+    jasyptEncryptionPassword: '${JASYPT_ENCRYPTION_PASSWORD}'
+    jasyptEncryptionSaltGeneratorClassName: '${JASYPT_ENCRYPTION_SALT_GENERATOR_CLASS_NAME}'
+    jasyptIvGeneratorClassName: '${JASYPT_ENCRYPTION_IV_GENERATOR_CLASS_NAME}'
+  mailing:
+    frontend:
+      activation_url: '/${API_CONTEXT_PATH}/v1/auth/activate-account'
+    backend:
+      email_validation_key: '${EMAIL_VALIDATION_KEY}'
+      password_reset_key: '${PASSWORD_RESET_KEY}'
+      account_delete_key: '${ACCOUNT_DELETE_KEY}'
+      app_config_key: '${APP_CONFIG_KEY}'
+      app_config_email: '${APP_CONFIG_EMAIL}'
+  messages:
+    contactus:
+      email: '${APP_SUPPORT_EMAIL}'
+      username:
+  aws:
+    s3:
+      access_key: '${AWS_S3_ACCESS_KEY}'
+      secret_key: '${AWS_S3_SECRETE_KEY}'
+      bucket_name: '${AWS_S3_BUCKET_NAME}'
+  seed:
+    public-password: '${SEED_PUBLIC_PASSWORD}'
+    admin-email: '${SEED_ADMIN_EMAIL}'
+    admin-username: '${SEED_ADMIN_USERNAME}'
+    admin-password: '${SEED_ADMIN_PASSWORD}'
+    manager-email: '${SEED_MANAGER_EMAIL}'
+    manager-username: '${SEED_MANAGER_USERNAME}'
+    manager-password: '${SEED_MANAGER_PASSWORD}'
+    payment:
+      enabled: '${APP_USERS_PAYMENT_ENABLED}'
+      commonSubscriptionKey: '${APP_EMPLOYEES_COMMON_SUBS_KEY}'
+      paypal:
+        client_id: '${PAYPAL_CLIENT_ID}'
+        client_secret: '${PAYPAL_CLIENT_SECRET}'
+        mode: '${PAYPAL_PAYMENT_MODE}'
+        successUrl: '${PAYPAL_PAYMENT_SUCCESS_URL}'
+        cancelUrl: '${PAYPAL_PAYMENT_CANCEL_URL}'
+      stripe:
+        publishable-key: '${STRIPE_PUBLISHABLE_KEY}'
+        secret-key: '${STRIPE_SECRET_KEY}'
+        successUrl: '${STRIPE_PAYMENT_SUCCESS_URL}'
+        cancelUrl: '${STRIPE_PAYMENT_CANCEL_URL}'
+      revenueCat:
+        project_id: '${RC_PROJECT_ID}'
+        subscriptionUrl: "https://api.revenuecat.com/v2/subscribers/"
+        secret-key: '${RC_SECRET_API_KEY}'
+    corsAllowedOrigins: '${HTTPS_WEB_ORIGIN:https://intouchup.com}, ${WWW_WEB_ORIGIN:https://www.intouchup.com}'
+

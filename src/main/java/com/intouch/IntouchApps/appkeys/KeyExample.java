@@ -20,11 +20,13 @@ public class KeyExample extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String englishName;
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String tigrinyaName;
     private String amharicName;
     private String category;
+    @Column(nullable = false)
     private Integer keyId;
+    @Column(nullable = false)
     private Integer keyFamilyId;
     @JsonProperty("isDefault") // For JSON serialization/deserialization
     @Column(name = "is_default") // For JPA column mapping

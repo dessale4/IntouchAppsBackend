@@ -20,7 +20,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -48,7 +47,7 @@ public class PaypalPaymentService {
             if(paypalPaymentRequest.getPayToEmail() != null && paypalPaymentRequest.getPayToEmail() != ""){
                 payToUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(paypalPaymentRequest.getPayToEmail().toLowerCase())).orElseThrow(()->new RuntimeException("Account not found with the provided information: " + paypalPaymentRequest.getPayToEmail().toLowerCase()));
             }else{
-                payToUser = userRepository.findByPublicUserName(paypalPaymentRequest.getPayToUserName()).orElseThrow(()->new RuntimeException("Account not found with the provided information: " + paypalPaymentRequest.getPayToUserName()));
+                payToUser = userRepository.findByUserName(paypalPaymentRequest.getPayToUserName()).orElseThrow(()->new RuntimeException("Account not found with the provided information: " + paypalPaymentRequest.getPayToUserName()));
             }
         }
         PaypalPaymentResponse paymentResponse;
@@ -86,9 +85,9 @@ public class PaypalPaymentService {
                     paymentResponse.setPaymentSuccessLink(successUrl);
                     paymentResponse.setPaymentCancelLink(cancelUrl);
                     paymentResponse.setPayByEmail(payingUser.getEmail());
-                    paymentResponse.setPayByUserName(payingUser.getPublicUserName());
+                    paymentResponse.setPayByUserName(payingUser.getUserName());
                     paymentResponse.setPayToEmail(payToUser ==null ? standardPBEStringEncryptor.decrypt(payingUser.getEmail()):standardPBEStringEncryptor.decrypt(payToUser.getEmail()));
-                    paymentResponse.setPayToUserName(payToUser ==null ? payingUser.getPublicUserName() : payToUser.getPublicUserName());
+                    paymentResponse.setPayToUserName(payToUser ==null ? payingUser.getUserName() : payToUser.getUserName());
                     paymentResponse.setPayingToSomeone(paypalPaymentRequest.isPayingToSomeone());
                     return paymentResponse;
                 }
@@ -113,7 +112,7 @@ public class PaypalPaymentService {
             if(appPayment.getPayToEmail() != null && appPayment.getPayToEmail() != ""){
                 storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(appPayment.getPayToEmail().toLowerCase())).orElseThrow(()->new RuntimeException("Account not found with the provided information \n" + appPayment.getPayToEmail().toLowerCase()));
             }else{
-                storedUser = userRepository.findByPublicUserName(appPayment.getPayToUserName()).orElseThrow(()->new RuntimeException("Account not found with the provided information \n" + appPayment.getPayToUserName()));
+                storedUser = userRepository.findByUserName(appPayment.getPayToUserName()).orElseThrow(()->new RuntimeException("Account not found with the provided information \n" + appPayment.getPayToUserName()));
             }
         }else{
             storedUser  = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(appPayment.getSubscriptionEmailAccount().toLowerCase())).orElseThrow(()->new UsernameNotFoundException("No account with email " + appPayment.getSubscriptionEmailAccount().toLowerCase()));
@@ -126,7 +125,7 @@ public class PaypalPaymentService {
         PaypalPaymentResponse paymentResponse = paymentResponse(executedPayment, appPayment.getSubscriptionAmount(), appPayment.getSubscriptionMonthCount(), storedUser);
         appPayment.setSubscriptionEmailAccount(standardPBEStringEncryptor.encrypt(appPayment.getSubscriptionEmailAccount().toLowerCase()));
         appPayment.setPayToEmail(storedUser.getEmail());
-        appPayment.setPayToUserName(storedUser.getPublicUserName());
+        appPayment.setPayToUserName(storedUser.getUserName());
         appPaymentRepository.save(appPayment);
         return paymentResponse;
     }

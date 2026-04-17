@@ -30,6 +30,6 @@ public class UserEntitlement extends BaseEntity {
     private Boolean verifiedWithRc;
     private Boolean active;
 //    private Instant purchaseDate;
-    private LocalDateTime expirationDate; // optional
+    private Instant expirationDate; // optional
     private String statusInRc;
 }

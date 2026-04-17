@@ -21,7 +21,7 @@ public class IAPRequest {
     @NotBlank
     private String purchaserPublicUserName;
     @NotBlank
-    private String beneficiary;//can be email or public username
+    private String beneficiary;//can be email or public userName
     @JsonProperty("isAGift")
     private Boolean isAGift;
     private Integer noOfDaysToAccess;

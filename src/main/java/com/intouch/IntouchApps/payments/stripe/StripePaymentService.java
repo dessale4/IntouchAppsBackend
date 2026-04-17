@@ -16,12 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -45,7 +43,7 @@ public class StripePaymentService {
             if(stripePaymentRequest.getPayToEmail() != null && stripePaymentRequest.getPayToEmail() != ""){
                 payToUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(stripePaymentRequest.getPayToEmail().toLowerCase())).orElseThrow(()->new RuntimeException("Account not found with the provided information: " + stripePaymentRequest.getPayToEmail().toLowerCase()));
             }else{
-                payToUser = userRepository.findByPublicUserName(stripePaymentRequest.getPayToUserName()).orElseThrow(()->new RuntimeException("Account not found with the provided information: " + stripePaymentRequest.getPayToUserName()));
+                payToUser = userRepository.findByUserName(stripePaymentRequest.getPayToUserName()).orElseThrow(()->new RuntimeException("Account not found with the provided information: " + stripePaymentRequest.getPayToUserName()));
             }
         }
         String requestBaseUrl = httpServletRequest.getRequestURL().substring(0, httpServletRequest.getRequestURL().indexOf(httpServletRequest.getServletPath()));
@@ -83,8 +81,8 @@ public class StripePaymentService {
                 .paymentCancelLink(cancelUrl)
                 .payByEmail(standardPBEStringEncryptor.decrypt(payingUser.getEmail()))
                 .payToEmail(payToUser != null ? standardPBEStringEncryptor.decrypt(payToUser.getEmail()) : standardPBEStringEncryptor.decrypt(payingUser.getEmail()))
-                .payByUserName(payingUser.getPublicUserName())
-                .payToUserName(payToUser != null ? payToUser.getPublicUserName() : payingUser.getPublicUserName())
+                .payByUserName(payingUser.getUserName())
+                .payToUserName(payToUser != null ? payToUser.getUserName() : payingUser.getUserName())
                 .payingToSomeone(stripePaymentRequest.isPayingToSomeone())
                 .build();
     }
@@ -95,7 +93,7 @@ public class StripePaymentService {
             if(appPayment.getPayToEmail() != null && appPayment.getPayToEmail() != ""){
                 storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(appPayment.getPayToEmail().toLowerCase())).orElseThrow(()->new RuntimeException("Account not found with the provided information \n" + appPayment.getPayToEmail().toLowerCase()));
             }else{
-                storedUser = userRepository.findByPublicUserName(appPayment.getPayToUserName()).orElseThrow(()->new RuntimeException("Account not found with the provided information \n" + appPayment.getPayToUserName()));
+                storedUser = userRepository.findByUserName(appPayment.getPayToUserName()).orElseThrow(()->new RuntimeException("Account not found with the provided information \n" + appPayment.getPayToUserName()));
             }
         }else{
             storedUser  = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(appPayment.getSubscriptionEmailAccount().toLowerCase())).orElseThrow(()->new UsernameNotFoundException("No account with email " + appPayment.getSubscriptionEmailAccount().toLowerCase()));
@@ -103,7 +101,7 @@ public class StripePaymentService {
         try{
             appPayment.setSubscriptionEmailAccount(standardPBEStringEncryptor.encrypt(appPayment.getSubscriptionEmailAccount().toLowerCase()));
             appPayment.setPayToEmail(storedUser.getEmail());
-            appPayment.setPayToUserName(storedUser.getPublicUserName());
+            appPayment.setPayToUserName(storedUser.getUserName());
             appPaymentRepository.save(appPayment);
             updateUserSubscriptionStatus(appPayment.getSubscriptionAmount(),appPayment.getSubscriptionMonthCount(), storedUser);
         }catch(Exception exception){

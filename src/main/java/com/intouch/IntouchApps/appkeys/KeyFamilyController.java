@@ -17,21 +17,15 @@ import java.util.List;
 public class KeyFamilyController {
     private final KeyFamilyService keyFamilyService;
     @PostMapping("/addKeyBasics")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public KeyFamilyDefaultDTO addKeyBasics(@RequestBody AppKeyRequest AppKeyRequest) throws InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         return keyFamilyService.addKeyBasics(AppKeyRequest);
     }
-
     @GetMapping("/getKeyFamilies")
     public List<KeyFamily> getAllKeyFamilies(){
         return keyFamilyService.getAllKeyFamilies();
     }
 
-//    @GetMapping("/getKeyFamiliesWithDefaultExamples")
-//    public List<KeyFamilyResponse> getKeyFamiliesWithDefaultExamples(){
-//
-//        return keyFamilyService.getKeyFamiliesWithDefaultExamples();
-//    }
 @GetMapping("/getKeyFamiliesWithDefaultExamples")
 @Observed(name = "getKeyFamiliesWithDefaultExamples")
 public List<KeyFamilyDefaultDTO> getKeyFamiliesWithDefaultExamples(){

@@ -16,13 +16,13 @@ public class AWSFileUploadController {
     private final AWSFileUploadService awsFileUploadService;
 
     @PostMapping("/keyFamilyAudio")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public KeyFamilyDefaultDTO uploadKeyFamilyAudio(@RequestParam("file") MultipartFile file, @RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("folderName") String folderName) {
 
         return awsFileUploadService.uploadKeyFamilyAudio(file, keyFamilyId, folderName);
     }
     @PostMapping("/keyAudio")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public String keyAudioFileUpload(@RequestBody MultipartFile file, @RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("keyId") Integer keyId, @RequestParam("folderName") String folderName) {
         if (file.isEmpty()) {
             return "Please select a file to upload.";
@@ -34,7 +34,7 @@ public class AWSFileUploadController {
         return message;
     }
     @PostMapping("/keyExampleImage")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public String keyExampleImageUpload(@RequestParam MultipartFile file, @RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("keyId") Integer keyId, @RequestParam("exampleId") Integer exampleId, @RequestParam("folderName") String folderName) {
         if (file.isEmpty()) {
             return "Please select a file to upload.";
@@ -48,7 +48,7 @@ public class AWSFileUploadController {
     }
 
     @PostMapping("/keyExampleAudio")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public String keyExampleAudioUpload(@RequestParam("file") MultipartFile file, @RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("keyId") Integer keyId, @RequestParam("exampleId") Integer exampleId, @RequestParam("folderName") String folderName) {
 
         if (file.isEmpty()) {

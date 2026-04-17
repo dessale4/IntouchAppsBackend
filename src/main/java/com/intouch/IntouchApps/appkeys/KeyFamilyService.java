@@ -129,7 +129,6 @@ public class KeyFamilyService {
     @Transactional
     @Cacheable(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'") //spring boot to manage req and res of method using AOP
     public List<KeyFamilyDefaultDTO> getKeyFamiliesWithDefaultExamples() {
-        System.out.println("getKeyFamiliesWithDefaultExamples called");
         Sort sort = Sort.by(Sort.Direction.ASC, "keyFamilyId");
         List<KeyFamily> keyFamilyList = keyFamilyRepository.findAll(sort);
         return keyFamilyList.stream()

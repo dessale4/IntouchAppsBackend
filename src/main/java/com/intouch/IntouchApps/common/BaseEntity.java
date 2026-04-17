@@ -1,7 +1,6 @@
 package com.intouch.IntouchApps.common;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import lombok.*;
@@ -11,22 +10,19 @@ import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 @MappedSuperclass
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-//@Builder
-//@ToString(exclude = "userRoles")
-//@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @EntityListeners(AuditingEntityListener.class)
 public class BaseEntity {
     @CreatedDate
     @Column(updatable = false)
-    private LocalDateTime createdAt;
+    private Instant createdAt;
     @LastModifiedDate
-    private LocalDateTime updatedAt;
+    private Instant updatedAt;
     @CreatedBy
     @Column(updatable = false)
     private String createdBy;

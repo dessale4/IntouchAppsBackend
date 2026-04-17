@@ -41,8 +41,8 @@
 </head>
 <body>
 <div class="container">
-    <h1><span th:text="${email_title}"></span></h1>
-    <p class="greeting" th:text="'Hello ' + ${username} + ','"></p>
+    <h1><span th:text="'IntouchUp '+ ${email_title}"></span></h1>
+    <p class="greeting" th:text="'Hello ' + ${userName} + ','"></p>
     <p>Thank you for choosing this app! Please use the following confirmation code for <span th:text="${email_message}"></span></p>
     <div class="activation-code"><span th:text="${activation_code}"></span></div>
 <!--    <div class="activation-link">-->

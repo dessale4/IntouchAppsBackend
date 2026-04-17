@@ -4,6 +4,7 @@ import com.intouch.IntouchApps.common.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 @Getter
 @Setter
@@ -20,7 +21,7 @@ public class RefreshToken extends BaseEntity {
     private Integer id;
     @Column(nullable = false, unique = true, length = 1024)
     private String jwtRefreshToken;
-    private LocalDateTime expiresAt;
+    private Instant expiresAt;
     @OneToOne
     private User user;
     @Column(nullable = false)

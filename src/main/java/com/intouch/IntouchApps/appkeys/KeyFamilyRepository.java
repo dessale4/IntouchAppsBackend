@@ -8,4 +8,5 @@ import java.util.Optional;
 @Repository
 public interface KeyFamilyRepository extends JpaRepository<KeyFamily, Integer> {
      Optional<KeyFamily> findByKeyFamilyId(Integer keyFamilyId);
+     boolean existsByKeyFamilyId(Integer keyFamilyId);
 }

@@ -1,5 +1,6 @@
 package com.intouch.IntouchApps.security;
 
+import com.intouch.IntouchApps.user.User;
 import com.intouch.IntouchApps.user.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +15,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 @Transactional
 @Primary
-public class UserDetailsServiceImpl implements UserDetailsService {
+public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
-    private final StandardPBEStringEncryptor standardPBEStringEncryptor;
     @Override
-//    @Transactional
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        return userRepository.findByEmail(username).orElseThrow(()-> new UsernameNotFoundException("User not found"));
+    @Transactional
+    public UserDetails loadUserByUsername(String userEmail) throws UsernameNotFoundException {
+    User user = userRepository.findByEmailWithActiveRoles(userEmail)
+                .orElseThrow(() -> new UsernameNotFoundException("No account found with email: " + userEmail));
+        return new CustomUserDetails(user);
     }
 }

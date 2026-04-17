@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.text.ParseException;
@@ -62,10 +63,7 @@ public class AuthenticationController {
     ) throws MessagingException {
         service.validatePasswordResetCode(token);
     }
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) throws ParseException {
-        return service.logout(request, response);
-    }
+
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) throws ParseException {
          return ResponseEntity.ok( service.getJwtRefreshToken(request, response));

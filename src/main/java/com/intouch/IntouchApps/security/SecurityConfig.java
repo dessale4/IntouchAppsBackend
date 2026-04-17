@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -16,6 +18,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
@@ -29,11 +32,30 @@ import static org.springframework.security.config.http.SessionCreationPolicy.STA
 @RequiredArgsConstructor
 @EnableMethodSecurity(securedEnabled = true)
 public class SecurityConfig {
-    private final AuthenticationProvider authenticationProvider;
     private final JwtFilter jwtAuthFilter;
-    private final PasswordEncoder passwordEncoder;
 
-    @Bean(name = "actuatorUsers")
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationProvider daoAuthenticationProvider(
+            UserDetailsService userDetailsService,
+            PasswordEncoder passwordEncoder
+    ) {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder);
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    //    @Bean(name = "actuatorUsers")
     InMemoryUserDetailsManager actuatorUsers(
             @Value("${ACT_USER:actuator}") String user,
             @Value("${ACT_PASS:change-me}") String pass,
@@ -47,33 +69,11 @@ public class SecurityConfig {
         );
     }
 
-    //    @Bean @Order(1)
-//    SecurityFilterChain actuator(HttpSecurity http,
-//                                 @Qualifier("actuatorUsers") UserDetailsService uds,
-//                                 PasswordEncoder enc) throws Exception {
-//
-//        var provider = new DaoAuthenticationProvider();
-//        provider.setUserDetailsService(uds);
-//        provider.setPasswordEncoder(enc);
-//
-//        http
-//                .securityMatcher("/actuator/**")
-////                .authenticationProvider(provider)                    // << tie this chain to that user store
-//                .authorizeHttpRequests(a -> a
-//                        .requestMatchers("/actuator/**").permitAll()
-//                        .anyRequest().permitAll())
-////                        .requestMatchers("/actuator/health").permitAll()
-////                        .anyRequest().hasAuthority("ACTUATOR"))
-//                .httpBasic(Customizer.withDefaults())
-//                .csrf(csrf -> csrf.disable())
-//                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-//        return http.build();
-//    }
-    @Bean
+    //    @Bean
     @Order(1)
-    SecurityFilterChain actuator(HttpSecurity http,
-                                 @Qualifier("actuatorUsers") UserDetailsService uds,
-                                 PasswordEncoder enc) throws Exception {
+    SecurityFilterChain actuatorSecurityFilterChain(HttpSecurity http,
+                                                    @Qualifier("actuatorUsers") UserDetailsService uds,
+                                                    PasswordEncoder enc) throws Exception {
 
         var provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(uds);
@@ -89,32 +89,38 @@ public class SecurityConfig {
                 )
                 .httpBasic(withDefaults())
                 .csrf(csrf -> csrf.disable())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+//                .addFilterBefore()//to be addressed
+        ;
         return http.build();
     }
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+
+    @Bean//bean of authenticationProvider is given above
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, AuthenticationProvider authenticationProvider) throws Exception {
         http
-//                .requiresChannel(channel -> channel.anyRequest().requiresSecure())// Enforce HTTPS for all requests
+                .requiresChannel(channel -> channel.anyRequest().requiresSecure())// Enforce HTTPS for all requests
                 .cors(withDefaults())//enforces CorsFilter bean config
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(req ->
-                        req.requestMatchers(
-                                        "auth/**",
-                                        "/v2/api-docs",
-                                        "/v3/api-docs",
-                                        "/v3/api-docs/**",
-                                        "/swagger-resources",
-                                        "/swagger-resources/**",
-                                        "/configuration/ui",
-                                        "/configuration/security",
-                                        "/swagger-ui/**",
-                                        "/webjars/**",
-                                        "/swagger-ui.html"
-                                )
-                                .permitAll()
-                                .anyRequest()
-                                .authenticated()
+                                req.requestMatchers(
+                                                "auth/**"
+//                                        "/v2/api-docs",
+//                                        "/v3/api-docs",
+//                                        "/v3/api-docs/**",
+//                                        "/swagger-resources",
+//                                        "/swagger-resources/**",
+//                                        "/configuration/ui",
+//                                        "/configuration/security",
+//                                        "/swagger-ui/**",
+//                                        "/webjars/**",
+//                                        "/swagger-ui.html"
+                                        )
+                                        .permitAll()
+                                        .requestMatchers(HttpMethod.POST, "/roles").hasRole("ADMIN")
+                                        .requestMatchers(HttpMethod.POST, "/user-roles/assign").hasRole("ADMIN")
+                                        .requestMatchers(HttpMethod.PUT, "/user-roles/remove").hasRole("ADMIN")
+                                        .anyRequest()
+                                        .authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(STATELESS))
                 .authenticationProvider(authenticationProvider)

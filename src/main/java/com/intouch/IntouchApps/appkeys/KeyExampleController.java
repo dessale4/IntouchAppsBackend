@@ -17,17 +17,17 @@ import java.util.Map;
 public class KeyExampleController {
     private final KeyExampleService keyExampleService;
     @PostMapping("/addKeyExample")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public AppKey addKeyExample(@RequestBody KeyExample keyExample){
         return keyExampleService.addKeyExample(keyExample);
     }
     @PatchMapping("/editKeyExample")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public KeyFamilyDefaultDTO editKeyExample(@RequestParam Integer keyFamilyId, @RequestParam Integer keyExampleId, @RequestBody  Map<String, Object> keyExample){
         return keyExampleService.editKeyExample(keyFamilyId, keyExampleId, keyExample);
     }
     @PostMapping("/setAsDefault")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public AppKey setAsDefaultExample(@RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("keyId") Integer keyId, @RequestParam("keyExampleId") Integer keyExampleId){
         return keyExampleService.setAsDefaultExample(keyFamilyId, keyId, keyExampleId);
     }
@@ -36,7 +36,7 @@ public class KeyExampleController {
         return keyExampleService.getKeyExamplesForAKey(keyFamilyId, keyId);
     }
     @DeleteMapping("/deleteKeyExample")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
     public ResponseEntity<?> deleteKeyExample(@RequestParam Integer keyFamilyId, @RequestParam Integer keyExampleId, @RequestParam Integer keyId){
 
         keyExampleService.deleteKeyExample(keyFamilyId, keyExampleId, keyId);
