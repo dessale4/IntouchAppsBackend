@@ -4,7 +4,6 @@ import com.intouch.IntouchApps.enums.JwtTokenType;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,11 +14,11 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.text.ParseException;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Function;
+
+import static com.intouch.IntouchApps.enums.JwtTokenType.ACCESS_TOKEN;
 
 @Service
 @RefreshScope
@@ -50,7 +49,7 @@ public class JwtService {
         claims.put("fullName", userDetails.getFullName());
         claims.put("email", userDetails.getEmail());
         claims.put("tokenType", tokenType.name());
-        if (tokenType == JwtTokenType.ACCESS) {
+        if (tokenType == ACCESS_TOKEN) {
             List<String> roles = userDetails.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .toList();
@@ -110,7 +109,7 @@ public class JwtService {
     }
 
     public long getExpirationMs(JwtTokenType tokenType) {
-        return tokenType == JwtTokenType.ACCESS
+        return tokenType == ACCESS_TOKEN
                 ? accessTokenExpirationMs
                 : refreshTokenExpirationMs;
     }
@@ -134,6 +133,6 @@ public class JwtService {
     }
 
     private SecretKey getSigningKey(JwtTokenType tokenType) {
-        return tokenType == JwtTokenType.ACCESS ? accessSigningKey : refreshSigningKey;
+        return tokenType == ACCESS_TOKEN ? accessSigningKey : refreshSigningKey;
     }
 }

@@ -32,9 +32,4 @@ public class IntouchAppsApplication {
         SpringApplication.run(IntouchAppsApplication.class, args);
     }
 
-    //    @PostConstruct
-    public void initSetUp() {
-        //keep default timezone setup here
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-    }
 }

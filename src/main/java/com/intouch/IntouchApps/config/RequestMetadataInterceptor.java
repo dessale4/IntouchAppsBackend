@@ -19,6 +19,7 @@ public class RequestMetadataInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request,
                              HttpServletResponse response,
                              Object handler) {
+        //update the state of the request scoped bean
         requestMetadataContext.setClientType(request.getHeader(CustomHeaders.CLIENT_TYPE));
 //        requestMetadataContext.setAppVersion(request.getHeader(CustomHeaders.APP_VERSION));
 //        requestMetadataContext.setDeviceId(request.getHeader(CustomHeaders.DEVICE_ID));

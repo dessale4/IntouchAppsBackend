@@ -10,13 +10,13 @@ import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.text.ParseException;
 import java.util.*;
+
+import static com.intouch.IntouchApps.enums.JwtTokenType.REFRESH_TOKEN;
 
 @Service
 @RequiredArgsConstructor
@@ -35,7 +35,7 @@ public class RefreshTokenService {
             throw new RuntimeException("Some Thing went wrong");
         }
         CustomUserDetails customUserDetails = new CustomUserDetails(user);
-        String newRefreshToken = jwtService.generateToken(customUserDetails, JwtTokenType.REFRESH);
+        String newRefreshToken = jwtService.generateToken(customUserDetails, REFRESH_TOKEN);
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .jwtRefreshToken(newRefreshToken)

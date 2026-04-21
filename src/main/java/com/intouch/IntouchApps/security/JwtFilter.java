@@ -1,7 +1,6 @@
 package com.intouch.IntouchApps.security;
 
 import com.intouch.IntouchApps.constants.ClientType;
-import com.intouch.IntouchApps.constants.CustomHeaders;
 import com.intouch.IntouchApps.enums.JwtTokenType;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
@@ -13,26 +12,23 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
 import java.util.Arrays;
 
 import io.jsonwebtoken.security.SignatureException;
 
 import static com.intouch.IntouchApps.constants.CustomHeaders.CLIENT_TYPE;
+import static com.intouch.IntouchApps.enums.JwtTokenType.ACCESS_TOKEN;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 
 @Service
@@ -96,10 +92,10 @@ public class JwtFilter extends OncePerRequestFilter {
                 return;
             }
 
-            userEmail = jwtService.extractUsername(jwt, JwtTokenType.ACCESS);
+            userEmail = jwtService.extractUsername(jwt, ACCESS_TOKEN);
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
-                if (jwtService.isTokenValid(jwt, userDetails, JwtTokenType.ACCESS)) {
+                if (jwtService.isTokenValid(jwt, userDetails, ACCESS_TOKEN)) {
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
                                     userDetails, null, userDetails.getAuthorities()

@@ -1,6 +1,6 @@
 package com.intouch.IntouchApps.enums;
 
 public enum JwtTokenType {
-    ACCESS,
-    REFRESH
+    ACCESS_TOKEN,
+    REFRESH_TOKEN
 }

@@ -1,7 +1,6 @@
 package com.intouch.IntouchApps.auth;
 
 import com.intouch.IntouchApps.config.RequestMetadataContext;
-import com.intouch.IntouchApps.constants.ClientType;
 import com.intouch.IntouchApps.constants.RoleConstants;
 import com.intouch.IntouchApps.email.AppEmail;
 import com.intouch.IntouchApps.email.EmailService;
@@ -48,7 +47,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.intouch.IntouchApps.constants.ClientType.MOBILE_CLIENT;
+import static com.intouch.IntouchApps.constants.ClientType.WEB_CLIENT;
 import static com.intouch.IntouchApps.email.EmailTemplateName.GENERIC_EMAIL_TEMPLATE;
+import static com.intouch.IntouchApps.enums.JwtTokenType.ACCESS_TOKEN;
+import static com.intouch.IntouchApps.enums.JwtTokenType.REFRESH_TOKEN;
 import static org.springframework.http.HttpHeaders.SET_COOKIE;
 
 @Service
@@ -68,7 +71,7 @@ public class AuthenticationService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRoleRepository userRoleRepository;
     private final AgePolicyService agePolicyService;
-    private final RequestMetadataContext requestMetadataContext;
+    private final RequestMetadataContext requestMetadataContext;//request scoped bean
     @Value("${application.mailing.backend.email_validation_key}")
     private String validateEmail;
     @Value("${server.ssl.enabled:false}")
@@ -194,7 +197,7 @@ public class AuthenticationService {
     @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) throws AccountNotActivatedException, MessagingException, ParseException {
         String requestClientType = requestMetadataContext.getClientType();
-        if (!(requestClientType.equals(ClientType.WEB_CLIENT) || requestClientType.equals(ClientType.MOBILE_CLIENT))) {
+        if (!(requestClientType.equals(WEB_CLIENT) || requestClientType.equals(MOBILE_CLIENT))) {
             throw new RuntimeException("Not allowed to do so");
         }
         String encryptedEmail = standardPBEStringEncryptor.encrypt(request.getEmail().toLowerCase());
@@ -214,10 +217,10 @@ public class AuthenticationService {
         );
 
         CustomUserDetails principal = (CustomUserDetails) auth.getPrincipal();
-        String jwtAccessToken = jwtService.generateToken(principal, JwtTokenType.ACCESS);
+        String jwtAccessToken = jwtService.generateToken(principal, ACCESS_TOKEN);
         refreshTokenService.deleteExistingUserRefreshTokens(storedUser);
         String refreshToken = refreshTokenService.createRefreshToken(storedUser).getJwtRefreshToken();
-        boolean isWebClient = requestClientType.equals(ClientType.WEB_CLIENT);
+        boolean isWebClient = requestClientType.equals(WEB_CLIENT);
 
         if (isWebClient) {
             ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
@@ -366,12 +369,12 @@ public class AuthenticationService {
 
     public ResponseEntity<?> getJwtRefreshToken(HttpServletRequest request, HttpServletResponse response) throws ParseException {
         String clientType = requestMetadataContext.getClientType();
-        if (!(clientType.equals(ClientType.WEB_CLIENT) || clientType.equals(ClientType.MOBILE_CLIENT))) {
+        if (!(clientType.equals(WEB_CLIENT) || clientType.equals(MOBILE_CLIENT))) {
             throw new RuntimeException("Not allowed to do so");
         }
         String refreshToken = null;
         boolean isWebClient =
-                clientType.equals(ClientType.WEB_CLIENT);
+                clientType.equals(WEB_CLIENT);
 
         // Web: refresh token from cookie
         if (isWebClient && request.getCookies() != null) {
@@ -401,7 +404,7 @@ public class AuthenticationService {
         CustomUserDetails customUserDetails = new CustomUserDetails(storedUser);
 
         boolean isRefreshTokenValid =
-                jwtService.isTokenValid(refreshToken, customUserDetails, JwtTokenType.REFRESH);
+                jwtService.isTokenValid(refreshToken, customUserDetails, REFRESH_TOKEN);
 
         if (!isRefreshTokenValid) {
             refreshTokenService.deleteByToken(refreshToken);
@@ -414,7 +417,7 @@ public class AuthenticationService {
         // 1. create new access token
         // 2. create new refresh token
         // 3. delete old refresh token
-        String newAccessToken = jwtService.generateToken(customUserDetails, JwtTokenType.ACCESS);
+        String newAccessToken = jwtService.generateToken(customUserDetails, ACCESS_TOKEN);
         refreshTokenService.deleteExistingUserRefreshTokens(storedUser);
         String newRefreshToken = refreshTokenService.createRefreshToken(storedUser).getJwtRefreshToken();
 

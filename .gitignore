@@ -3,6 +3,7 @@ hcpKey.txt
 config_db_schema.txt
 docker-compose.yml
 Dockerfile
+prometheus.yml
 dockerCommand.png
 dockerCommands.txt
 springBootProductionActions.txt
