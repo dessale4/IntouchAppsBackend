@@ -13,6 +13,7 @@ redisclicommands.txt
 src/main/java/com/intouch/IntouchApps/utils/JasyptEncryptionUtil.java
 src/main/resources/application-test.yml
 src/main/resources/application-dev.yml
+src/main/resources/application-stagging.yml
 src/main/resources/bootstrap.yml
 src/main/java/com/intouch/IntouchApps/constants/RoleSeeder.java
 src/main/java/com/intouch/IntouchApps/constants/KeyFamilySeeder.java
