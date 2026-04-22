@@ -8,13 +8,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Print target
+        run: |
+          echo "HOST=${{ secrets.EC2_HOST }}"
+          echo "USER=${{ secrets.EC2_USER }}"
+
+      - name: Check port 22 reachability
+        run: |
+          nc -vz ${{ secrets.EC2_HOST }} 22
+
       - name: Setup SSH key
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Test SSH connection
+      - name: Test SSH directly
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "whoami && hostname && pwd"
+          ssh -vvv -o StrictHostKeyChecking=no -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "whoami && hostname && pwd"
