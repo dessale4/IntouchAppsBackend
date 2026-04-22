@@ -1,0 +1,53 @@
+name: Deploy Backend Production
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: Build backend jar
+        run: mvn clean package -DskipTests
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Prepare remote staging directory
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "rm -rf /opt/intouch/releases/backend/current && mkdir -p /opt/intouch/releases/backend/current"
+
+      - name: Upload CICD jar to EC2 staging
+        run: |
+          scp -i ~/.ssh/id_ed25519 target/IntouchAppsContainerCICD.jar \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/intouch/releases/backend/current/IntouchAppsContainerCICD.jar
+
+      - name: Run backend deploy script
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "bash /opt/intouch/deploy-backend.sh"
+
+      - name: Verify CICD image exists
+        run: |
+          ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+            "docker images | grep intouch-apps-image-cicd"
