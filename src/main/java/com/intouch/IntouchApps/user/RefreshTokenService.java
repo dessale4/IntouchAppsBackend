@@ -1,6 +1,5 @@
 package com.intouch.IntouchApps.user;
 
-import com.intouch.IntouchApps.enums.JwtTokenType;
 import com.intouch.IntouchApps.security.CustomUserDetails;
 import com.intouch.IntouchApps.security.JwtService;
 import com.intouch.IntouchApps.utils.AppDateUtil;
@@ -39,7 +38,7 @@ public class RefreshTokenService {
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .jwtRefreshToken(newRefreshToken)
-                .expiresAt(AppDateUtil.getCurrentUTCLocalDateTime().plusNanos(refreshTokenDurationMs * 1000000))
+                .expiresAt(AppDateUtil.getCurrentUtcInstant().plusNanos(refreshTokenDurationMs * 1000000))
                 .revoked(false)
                 .build();
         return refreshTokenRepository.save(refreshToken);
@@ -77,7 +76,7 @@ public class RefreshTokenService {
     }
 
     public boolean isTokenValid(RefreshToken token) {
-        return !token.isRevoked() && token.getExpiresAt().isAfter(AppDateUtil.getCurrentUTCLocalDateTime());
+        return !token.isRevoked() && token.getExpiresAt().isAfter(AppDateUtil.getCurrentUtcInstant());
     }
 
 

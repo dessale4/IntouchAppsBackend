@@ -294,7 +294,7 @@
         </dependencies>
     </dependencyManagement>
     <build>
-        <finalName>IntouchAppsContainerCICD</finalName>
+        <finalName>IntouchApps</finalName>
         <!--		<resources>-->
         <!--			<resource>-->
         <!--				<directory>src/main/resources</directory>-->

@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
@@ -31,13 +30,13 @@ public class SubscriptionService {
             subscription = Subscription.builder()
                     .ownerPublicUserName(existingAppUser.getUserName())
                     .subscriptionProductName(subProductName)
-                    .expirationDate(AppDateUtil.getCurrentUTCLocalDateTime().plus(addedDays, ChronoUnit.DAYS))
+                    .expirationDate(AppDateUtil.getCurrentUtcInstant().plus(addedDays, ChronoUnit.DAYS))
                     .noteOnUpdate(isGift ? "Gift from " + offeredBy : "First Self Subscription")
                     .productPurchaseCount(1)
                     .build();
             subscriptionRepository.save(subscription);
         }else{
-            Instant subExpirationDate = subscription.getExpirationDate().isAfter(AppDateUtil.getCurrentUTCLocalDateTime()) ? subscription.getExpirationDate().plus(addedDays, ChronoUnit.DAYS) : AppDateUtil.getCurrentUTCLocalDateTime().plus(addedDays, ChronoUnit.DAYS);
+            Instant subExpirationDate = subscription.getExpirationDate().isAfter(AppDateUtil.getCurrentUtcInstant()) ? subscription.getExpirationDate().plus(addedDays, ChronoUnit.DAYS) : AppDateUtil.getCurrentUtcInstant().plus(addedDays, ChronoUnit.DAYS);
             subscription.setExpirationDate(subExpirationDate);
             subscription.setNoteOnUpdate(isGift ? "Gift from " + offeredBy : "Self Subscription Renewal");
             subscription.setProductPurchaseCount(subscription.getProductPurchaseCount() + 1);
@@ -48,7 +47,7 @@ public class SubscriptionService {
     public Set<String> getUserActiveSubscriptions(String publicUserName){
         List<Subscription> subscriptions = subscriptionRepository.findByOwnerPublicUserName(publicUserName);
         return subscriptions.stream()
-                .filter(s->s.getExpirationDate().isAfter(AppDateUtil.getCurrentUTCLocalDateTime()))
+                .filter(s->s.getExpirationDate().isAfter(AppDateUtil.getCurrentUtcInstant()))
                 .map(s->s.getSubscriptionProductName())
                 .collect(Collectors.toSet());
     }

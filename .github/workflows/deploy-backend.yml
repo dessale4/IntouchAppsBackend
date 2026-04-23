@@ -1,6 +1,8 @@
 name: Deploy Backend Production
 
 on:
+#  push:
+#    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -25,6 +27,12 @@ jobs:
       - name: Build backend jar
         run: mvn clean package -DskipTests
 
+      - name: Create timestamped jar copy
+        run: |
+          TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
+          cp target/IntouchApps.jar target/IntouchApps-${TIMESTAMP}.jar
+          echo "TIMESTAMP=${TIMESTAMP}" >> $GITHUB_ENV
+
       - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
@@ -35,19 +43,24 @@ jobs:
       - name: Prepare remote staging directory
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "rm -rf /opt/intouch/releases/backend/current && mkdir -p /opt/intouch/releases/backend/current"
+            "mkdir -p /opt/intouch/releases/backend/current"
 
-      - name: Upload CICD jar to EC2 staging
+      - name: Upload timestamped jar to EC2 staging
         run: |
-          scp -i ~/.ssh/id_ed25519 target/IntouchAppsContainerCICD.jar \
-            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/intouch/releases/backend/current/IntouchAppsContainerCICD.jar
+          scp -i ~/.ssh/id_ed25519 target/IntouchApps-${TIMESTAMP}.jar \
+            ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/opt/intouch/releases/backend/current/
 
       - name: Run backend deploy script
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
             "bash /opt/intouch/deploy-backend.sh"
 
-      - name: Verify CICD image exists
+      - name: Verify backend container is running
         run: |
           ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
-            "docker images | grep intouch-apps-image-cicd"
+            "docker ps | grep intouch-apps-container"
+
+#      - name: Verify backend health
+#        run: |
+#          ssh -i ~/.ssh/id_ed25519 ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} \
+#            "curl -fsS http://127.0.0.1:9001/actuator/health"

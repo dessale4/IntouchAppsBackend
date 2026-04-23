@@ -9,6 +9,8 @@ server:
 spring:
   jackson:
     time-zone: UTC
+    serialization:
+      write-dates-as-timestamps: false
   application:
     name: InTouchApps
   profiles:

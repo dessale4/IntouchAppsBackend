@@ -115,10 +115,10 @@ public class AppUsersService {
         if (!savedVerificationToken.getCreationReason().equals(emailReason)) {
             throw new RuntimeException(savedVerificationToken.getToken() + " is not " + emailReason + " token");
         }
-        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedVerificationToken.getExpiresAt())) {
+        if (AppDateUtil.getCurrentUtcInstant().isAfter(savedVerificationToken.getExpiresAt())) {
             throw new RuntimeException("Token has been already expired.");
         }
-        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
+        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUtcInstant());
         tokenRepository.save(savedVerificationToken);
     }
 

@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Documented
 @Constraint(validatedBy = PublicUserNameValidator.class)
 public @interface ValidPublicUserName {
-    public String message() default "Username length should be 4 to 10 characters";
+    public String message() default "Username length should be 3 to 20 characters";
     Class<?>[] groups() default {};
     Class<? extends Payload>[] payload() default {};
 }

@@ -38,7 +38,7 @@ public class EntitlementService {
                 .purchaserPublicUserName(payload.getPurchaserPublicUserName())
                 .isAGift(payload.getIsAGift())
                 .beneficiary(payload.getBeneficiary())
-                .expirationDate(AppDateUtil.getCurrentUTCLocalDateTime().plus(payload.getNoOfDaysToAccess(), ChronoUnit.DAYS))
+                .expirationDate(AppDateUtil.getCurrentUtcInstant().plus(payload.getNoOfDaysToAccess(), ChronoUnit.DAYS))
                 .active(true)
                 .build();
         if(isValidTransaction){

@@ -4,7 +4,6 @@ import com.intouch.IntouchApps.config.RequestMetadataContext;
 import com.intouch.IntouchApps.constants.RoleConstants;
 import com.intouch.IntouchApps.email.AppEmail;
 import com.intouch.IntouchApps.email.EmailService;
-import com.intouch.IntouchApps.enums.JwtTokenType;
 import com.intouch.IntouchApps.handler.AccountNotActivatedException;
 import com.intouch.IntouchApps.role.Role;
 import com.intouch.IntouchApps.role.RoleRepository;
@@ -122,8 +121,8 @@ public class AuthenticationService {
                 .accountLocked(false)
                 .dobVerified(true)
                 .enabled(false)
-                .createdDate(AppDateUtil.getCurrentUTCLocalDateTime())
-                .lastModifiedDate(AppDateUtil.getCurrentUTCLocalDateTime())
+                .createdDate(AppDateUtil.getCurrentUtcInstant())
+                .lastModifiedDate(AppDateUtil.getCurrentUtcInstant())
                 .build();
 
         user = userRepository.save(user);
@@ -170,8 +169,8 @@ public class AuthenticationService {
         String generatedToken = generateActivationCode(6);
         var token = VerificationToken.builder()
                 .token(generatedToken)
-                .createdAt(AppDateUtil.getCurrentUTCLocalDateTime())
-                .expiresAt(AppDateUtil.getCurrentUTCLocalDateTime().plus(15, ChronoUnit.MINUTES))
+                .createdAt(AppDateUtil.getCurrentUtcInstant())
+                .expiresAt(AppDateUtil.getCurrentUtcInstant().plus(15, ChronoUnit.MINUTES))
                 .user(user)
                 .creationReason(tokenSendingReason)
                 .build();
@@ -259,7 +258,7 @@ public class AuthenticationService {
         if (!savedVerificationToken.getCreationReason().equals(validateEmail)) {
             throw new RuntimeException(savedVerificationToken.getToken() + " is not email validation token");
         }
-        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedVerificationToken.getExpiresAt())) {
+        if (AppDateUtil.getCurrentUtcInstant().isAfter(savedVerificationToken.getExpiresAt())) {
             //users need to validate their email with unexpired token/code
             sendEmail(savedVerificationToken.getUser(), validateEmail);
             throw new RuntimeException("Activation token has expired. A new token has been emailed to you");
@@ -267,7 +266,7 @@ public class AuthenticationService {
         User user = savedVerificationToken.getUser();
         user.setEnabled(true);
         savedVerificationToken.setUser(user);
-        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
+        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUtcInstant());
         tokenRepository.save(savedVerificationToken);
         return "Email Confirmed Successfully";
     }
@@ -306,10 +305,10 @@ public class AuthenticationService {
         if (!savedVerificationToken.getCreationReason().equals(resetPassword)) {
             throw new RuntimeException(savedVerificationToken.getToken() + " is not password reset token");
         }
-        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedVerificationToken.getExpiresAt())) {
+        if (AppDateUtil.getCurrentUtcInstant().isAfter(savedVerificationToken.getExpiresAt())) {
             throw new RuntimeException("PasswordReset token has expired. Please try again to reset your password");
         }
-        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
+        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUtcInstant());
         tokenRepository.save(savedVerificationToken);
     }
 
@@ -341,10 +340,10 @@ public class AuthenticationService {
         if (!savedVerificationToken.getCreationReason().equals(deleteAccountEmail)) {
             throw new RuntimeException(savedVerificationToken.getToken() + " is not delete  account token");
         }
-        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedVerificationToken.getExpiresAt())) {
+        if (AppDateUtil.getCurrentUtcInstant().isAfter(savedVerificationToken.getExpiresAt())) {
             throw new RuntimeException("Account Delete token has been already expired.");
         }
-        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
+        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUtcInstant());
         tokenRepository.save(savedVerificationToken);
     }
 
@@ -359,10 +358,10 @@ public class AuthenticationService {
         if (!savedVerificationToken.getCreationReason().equals(appConfigKey)) {
             throw new RuntimeException(savedVerificationToken.getToken() + " is not an app config token");
         }
-        if (AppDateUtil.getCurrentUTCLocalDateTime().isAfter(savedVerificationToken.getExpiresAt())) {
+        if (AppDateUtil.getCurrentUtcInstant().isAfter(savedVerificationToken.getExpiresAt())) {
             throw new RuntimeException("App Config token has been already expired.");
         }
-        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUTCLocalDateTime());
+        savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUtcInstant());
         tokenRepository.save(savedVerificationToken);
         return true;
     }

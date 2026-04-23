@@ -6,6 +6,6 @@ import jakarta.validation.ConstraintValidatorContext;
 public class PublicUserNameValidator implements ConstraintValidator<ValidPublicUserName, String> {
     @Override
     public boolean isValid(String userName, ConstraintValidatorContext constraintValidatorContext) {
-        return !userName.contains("@") && userName.length() >= 4 && userName.length() <= 10;
+        return !userName.contains("@") && userName.length() >= 3 && userName.length() <= 20;
     }
 }

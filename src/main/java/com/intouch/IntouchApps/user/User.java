@@ -2,6 +2,7 @@ package com.intouch.IntouchApps.user;
 
 import com.intouch.IntouchApps.role.Role;
 //import com.intouch.IntouchApps.security.StringEncryptConverter;
+import com.intouch.IntouchApps.validation.ValidPublicUserName;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
@@ -45,6 +46,7 @@ public class User {
     @Column(unique = true)
     private String email;
     @Column(unique = true)
+    @ValidPublicUserName
     private String userName;
     private String password;
     private boolean accountLocked;
