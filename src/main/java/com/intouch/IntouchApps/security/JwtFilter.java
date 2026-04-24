@@ -52,22 +52,33 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        String path = request.getServletPath();
-//        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-//            filterChain.doFilter(request, response);
-//            return;
-//        }
+        String servletPath = request.getServletPath();
         final String clientTypeHeader = request.getHeader(CLIENT_TYPE);
-        if(clientTypeHeader == null ||
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        if (clientTypeHeader == null ||
                 !(MOBILE_CLIENT.equals(clientTypeHeader) ||
-                        WEB_CLIENT.equals(clientTypeHeader))){
-            log.info("not an allowed client type => " + clientTypeHeader +"<====>"+request.getServletPath());
-            exceptionResolver.resolveException(request, response, null, new RuntimeException("Sorry We are making updates to the service. Please check in some time."));
+                        WEB_CLIENT.equals(clientTypeHeader))) {
+            log.info("not an allowed client type => {} <====> {}", clientTypeHeader, servletPath);
+
+            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE); // 503
+            response.setContentType("application/json");
+            response.setCharacterEncoding("UTF-8");
+            response.getWriter().write("""
+                    {
+                      "message": "Sorry, we are making updates to the service. Please check again later."
+                    }
+                    """);
+//            log.info("not an allowed client type => " + clientTypeHeader +"<====>"+ servletPath);
+//            exceptionResolver.resolveException(request, response, null, new RuntimeException("Sorry We are making updates to the service. Please check in some time."));
 //            exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed now"));
             return;
         }
-        if (request.getServletPath().startsWith("/auth/")) {
-            log.info("authentication is not required => " + request.getServletPath());
+
+        if (servletPath.startsWith("/auth/")) {
+            log.info("authentication is not required => " + servletPath);
             filterChain.doFilter(request, response);
             return;
         }
@@ -76,8 +87,8 @@ public class JwtFilter extends OncePerRequestFilter {
         final String jwt;
         final String userEmail;
         //this happens when jwtRefreshToken expired and logout retried
-        if(clientTypeHeader.equals(MOBILE_CLIENT) && request.getServletPath().equals("/appUsers/logout") && authHeader == null){
-           return;
+        if (clientTypeHeader.equals(MOBILE_CLIENT) && servletPath.equals("/appUsers/logout") && authHeader == null) {
+            return;
         }
         try {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -93,12 +104,12 @@ public class JwtFilter extends OncePerRequestFilter {
 //                System.out.println(jwt + "is request jwt cookie for ==> " + request.getServletPath());
             } else {
 
-                log.info("not a jwt Auth => " + request.getServletPath());
+                log.info("not a jwt Auth => " + servletPath);
                 exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed"));
                 return;
             }
             if (jwt == null || jwt.isEmpty() || jwt.isBlank()) {
-                log.info("jwt not found => " + request.getServletPath());
+                log.info("jwt not found => " + servletPath);
                 exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed"));
                 return;
             }
@@ -126,7 +137,7 @@ public class JwtFilter extends OncePerRequestFilter {
                 return;
             }
             filterChain.doFilter(request, response);
-        } catch ( ExpiredJwtException | SignatureException ex) {
+        } catch (ExpiredJwtException | SignatureException ex) {
             exceptionResolver.resolveException(request, response, null, ex);
         }
     }
