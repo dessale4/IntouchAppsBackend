@@ -27,6 +27,8 @@ import java.util.Arrays;
 
 import io.jsonwebtoken.security.SignatureException;
 
+import static com.intouch.IntouchApps.constants.ClientType.MOBILE_CLIENT;
+import static com.intouch.IntouchApps.constants.ClientType.WEB_CLIENT;
 import static com.intouch.IntouchApps.constants.CustomHeaders.CLIENT_TYPE;
 import static com.intouch.IntouchApps.enums.JwtTokenType.ACCESS_TOKEN;
 import static org.springframework.http.HttpHeaders.AUTHORIZATION;
@@ -51,8 +53,17 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
         String path = request.getServletPath();
-        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
-            filterChain.doFilter(request, response);
+//        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+//            filterChain.doFilter(request, response);
+//            return;
+//        }
+        final String clientTypeHeader = request.getHeader(CLIENT_TYPE);
+        if(clientTypeHeader == null ||
+                !(MOBILE_CLIENT.equals(clientTypeHeader) ||
+                        WEB_CLIENT.equals(clientTypeHeader))){
+            log.info("not an allowed client type => " + clientTypeHeader +"<====>"+request.getServletPath());
+            exceptionResolver.resolveException(request, response, null, new RuntimeException("Sorry We are making updates to the service. Please check in some time."));
+//            exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed now"));
             return;
         }
         if (request.getServletPath().startsWith("/auth/")) {
@@ -60,20 +71,12 @@ public class JwtFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        final String clientTypeHeader = request.getHeader(CLIENT_TYPE);
-        if(clientTypeHeader == null ||
-                !(ClientType.MOBILE_CLIENT.equals(clientTypeHeader) ||
-                        ClientType.WEB_CLIENT.equals(clientTypeHeader))){
-            log.info("not an allowed client type => " + clientTypeHeader +"<====>"+request.getServletPath());
-            exceptionResolver.resolveException(request, response, null, new RuntimeException("Sorry We are making updates to the service. Please check in some time."));
-//            exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed now"));
-            return;
-        }
+
         final String authHeader = request.getHeader(AUTHORIZATION);
         final String jwt;
         final String userEmail;
         //this happens when jwtRefreshToken expired and logout retried
-        if(clientTypeHeader.equals(ClientType.MOBILE_CLIENT) && request.getServletPath().equals("/appUsers/logout") && authHeader == null){
+        if(clientTypeHeader.equals(MOBILE_CLIENT) && request.getServletPath().equals("/appUsers/logout") && authHeader == null){
            return;
         }
         try {

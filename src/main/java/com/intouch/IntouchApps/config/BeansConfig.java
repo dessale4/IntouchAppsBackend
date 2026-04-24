@@ -35,7 +35,7 @@ public class BeansConfig {
     public CorsFilter corsFilter() {
         final UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         final CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
+        config.setAllowCredentials(true);// Needed for withCredentials: true
         //todo prepare desired list for allowed origins
         config.setAllowedOrigins(allowedOriginsList);
         config.setAllowedHeaders(Arrays.asList(
