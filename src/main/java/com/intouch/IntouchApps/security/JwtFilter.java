@@ -50,8 +50,13 @@ public class JwtFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+        String path = request.getServletPath();
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         final String clientTypeHeader = request.getHeader(CLIENT_TYPE);
-        if(!(clientTypeHeader.equals(ClientType.MOBILE_CLIENT) || clientTypeHeader.equals(ClientType.WEB_CLIENT))){
+        if(clientTypeHeader == null || !(clientTypeHeader.equals(ClientType.MOBILE_CLIENT) || clientTypeHeader.equals(ClientType.WEB_CLIENT))){
             log.info("not an allowed client type => " + clientTypeHeader +"<====>"+request.getServletPath());
             exceptionResolver.resolveException(request, response, null, new RuntimeException("Sorry We are making updates to the service. Please check in some time."));
 //            exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed now"));
