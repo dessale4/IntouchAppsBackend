@@ -55,16 +55,18 @@ public class JwtFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        final String clientTypeHeader = request.getHeader(CLIENT_TYPE);
-        if(clientTypeHeader == null || !(clientTypeHeader.equals(ClientType.MOBILE_CLIENT) || clientTypeHeader.equals(ClientType.WEB_CLIENT))){
-            log.info("not an allowed client type => " + clientTypeHeader +"<====>"+request.getServletPath());
-            exceptionResolver.resolveException(request, response, null, new RuntimeException("Sorry We are making updates to the service. Please check in some time."));
-//            exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed now"));
-            return;
-        }
         if (request.getServletPath().startsWith("/auth/")) {
             log.info("authentication is not required => " + request.getServletPath());
             filterChain.doFilter(request, response);
+            return;
+        }
+        final String clientTypeHeader = request.getHeader(CLIENT_TYPE);
+        if(clientTypeHeader == null ||
+                !(ClientType.MOBILE_CLIENT.equals(clientTypeHeader) ||
+                        ClientType.WEB_CLIENT.equals(clientTypeHeader))){
+            log.info("not an allowed client type => " + clientTypeHeader +"<====>"+request.getServletPath());
+            exceptionResolver.resolveException(request, response, null, new RuntimeException("Sorry We are making updates to the service. Please check in some time."));
+//            exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed now"));
             return;
         }
         final String authHeader = request.getHeader(AUTHORIZATION);
