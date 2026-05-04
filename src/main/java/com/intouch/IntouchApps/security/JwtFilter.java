@@ -67,10 +67,13 @@ public class JwtFilter extends OncePerRequestFilter {
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.getWriter().write("""
-                    {
-                      "message": "Sorry, we are making updates to the service. Please check again later."
-                    }
-                    """);
+                    //                    {
+                    //                      "message": "Sorry, we are making updates to the service. Please check again later."
+                    //                    }
+                                        {
+                                          "message": "Sorry, Please install the new Update. A very required update made to the app."
+                                        }
+                                        """);
 //            log.info("not an allowed client type => " + clientTypeHeader +"<====>"+ servletPath);
 //            exceptionResolver.resolveException(request, response, null, new RuntimeException("Sorry We are making updates to the service. Please check in some time."));
 //            exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed now"));
