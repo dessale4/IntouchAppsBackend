@@ -10,10 +10,7 @@ import com.intouch.IntouchApps.role.RoleRepository;
 import com.intouch.IntouchApps.security.CustomUserDetails;
 import com.intouch.IntouchApps.security.JwtService;
 import com.intouch.IntouchApps.user.*;
-import com.intouch.IntouchApps.utils.AppDateUtil;
-import com.intouch.IntouchApps.utils.AppPhoneUtil;
-import com.intouch.IntouchApps.utils.PatternUtil;
-import com.intouch.IntouchApps.utils.UserAndRolesUtil;
+import com.intouch.IntouchApps.utils.*;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -166,7 +163,8 @@ public class AuthenticationService {
 
     private String generateAndSaveActivationToken(User user, String tokenSendingReason) {
         //generate a token
-        String generatedToken = generateActivationCode(6);
+//        String generatedToken = generateActivationCode(6);
+        String generatedToken = RandomCodeGenerator.numericCode(6);
         var token = VerificationToken.builder()
                 .token(generatedToken)
                 .createdAt(AppDateUtil.getCurrentUtcInstant())
@@ -181,18 +179,6 @@ public class AuthenticationService {
         tokenRepository.save(token);
         return generatedToken;
     }
-
-    private String generateActivationCode(int length) {
-        String characters = "0123456789";
-        StringBuilder codeBuilder = new StringBuilder();
-        SecureRandom secureRandom = new SecureRandom();
-        for (int i = 0; i < length; i++) {
-            int randomIndex = secureRandom.nextInt(characters.length()); //0--9
-            codeBuilder.append(characters.charAt(randomIndex));
-        }
-        return codeBuilder.toString();
-    }
-
     @Transactional
     public AuthenticationResponse authenticate(AuthenticationRequest request, HttpServletResponse response) throws AccountNotActivatedException, MessagingException, ParseException {
         String requestClientType = requestMetadataContext.getClientType();

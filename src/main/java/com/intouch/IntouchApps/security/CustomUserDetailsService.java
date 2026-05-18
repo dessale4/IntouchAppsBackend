@@ -2,7 +2,7 @@ package com.intouch.IntouchApps.security;
 
 import com.intouch.IntouchApps.user.User;
 import com.intouch.IntouchApps.user.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.context.annotation.Primary;

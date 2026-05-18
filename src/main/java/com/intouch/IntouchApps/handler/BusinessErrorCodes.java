@@ -17,6 +17,8 @@ public enum BusinessErrorCodes {
     JWT_EXPIRED_EXCEPTION(403, FORBIDDEN, "Login session already expired. Please login again."),
     ACCESS_DENIED_EXCEPTION(403, FORBIDDEN, "not_authorized!"),
     APPLICATION_ERROR(500, INTERNAL_SERVER_ERROR, "Some thing went wrong"),
+    LIVE_ROOM_CONFLICT(409, CONFLICT, "Live room operation conflict"),
+    OPTIMISTIC_LOCK_ERROR(409, CONFLICT, "This item was updated by another user. Please refresh and try again."),
     ;
     @Getter
     private final int code;

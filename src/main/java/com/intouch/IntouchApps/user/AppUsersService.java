@@ -8,7 +8,7 @@ import com.intouch.IntouchApps.utils.AppPhoneUtil;
 import com.intouch.IntouchApps.utils.ConstantsUtil;
 import com.intouch.IntouchApps.utils.UserAndRolesUtil;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;

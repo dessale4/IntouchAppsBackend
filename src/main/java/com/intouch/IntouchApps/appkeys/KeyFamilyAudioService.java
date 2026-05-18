@@ -1,7 +1,7 @@
 package com.intouch.IntouchApps.appkeys;
 
 import com.intouch.IntouchApps.utils.AppObjectMapper;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

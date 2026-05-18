@@ -80,11 +80,15 @@ public class User {
         userRoles.remove(userRole);
         userRole.setUser(null);
     }
-
     public String fullName() {
         return this.firstName + " " + this.lastName;
     }
-
+    @Builder.Default
+    @Column(name = "max_live_room_group_count", nullable = false)
+    private Integer maxLiveRoomGroupCount = 5;
+    @Builder.Default
+    @Column(name = "max_live_room_participant_count", nullable = false)
+    private Integer maxLiveRoomParticipantCount = 35;
     @Override
     public String toString() {
         return "User{" +

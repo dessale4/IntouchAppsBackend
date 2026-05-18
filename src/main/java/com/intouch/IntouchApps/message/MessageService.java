@@ -2,7 +2,7 @@ package com.intouch.IntouchApps.message;
 
 import com.intouch.IntouchApps.user.User;
 import com.intouch.IntouchApps.user.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;

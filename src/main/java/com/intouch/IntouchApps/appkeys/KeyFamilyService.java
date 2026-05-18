@@ -3,7 +3,6 @@ package com.intouch.IntouchApps.appkeys;
 import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
 import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultMapper;
 import com.intouch.IntouchApps.utils.AppObjectMapper;
-//import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
@@ -118,14 +117,6 @@ public class KeyFamilyService {
                 .collect(Collectors.toList());
         return decryptedKeyFamilies;
     }
-
-    //    public List<KeyFamilyResponse> getKeyFamiliesWithDefaultExamples() {
-//        Sort sort = Sort.by(Sort.Direction.ASC, "keyFamilyId");
-//        List<KeyFamily> keyFamilyList = keyFamilyRepository.findAll(sort);
-//        return keyFamilyList.stream()
-//                .map((kf) -> appObjectMapper.mapKeyFamilyToKeyFamilyResponse(kf))
-//                .collect(Collectors.toList());
-//    }
     @Transactional
     @Cacheable(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'") //spring boot to manage req and res of method using AOP
     public List<KeyFamilyDefaultDTO> getKeyFamiliesWithDefaultExamples() {

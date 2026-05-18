@@ -2,7 +2,7 @@ package com.intouch.IntouchApps.payments.mobile_store;
 
 import com.intouch.IntouchApps.user.SubscriptionService;
 import com.intouch.IntouchApps.utils.AppDateUtil;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

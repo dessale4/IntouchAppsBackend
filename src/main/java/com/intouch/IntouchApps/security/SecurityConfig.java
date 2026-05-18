@@ -103,7 +103,8 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(req ->
                                 req.requestMatchers(
-                                                "auth/**"
+                                                "auth/**",
+                                                "/ws/live-rooms/**"//security handled on websocket config
 //                                        "/v2/api-docs",
 //                                        "/v3/api-docs",
 //                                        "/v3/api-docs/**",
@@ -119,6 +120,11 @@ public class SecurityConfig {
                                         .requestMatchers(HttpMethod.POST, "/roles").hasRole("ADMIN")
                                         .requestMatchers(HttpMethod.POST, "/user-roles/assign").hasRole("ADMIN")
                                         .requestMatchers(HttpMethod.PUT, "/user-roles/remove").hasRole("ADMIN")
+                                        .requestMatchers("/mobile/live-rooms/**")
+                                        .hasAnyAuthority("ROLE_USER", "ROLE_LIVEROOM_OWNER", "ROLE_ADMIN", "ROLE_MANAGER")
+
+                                        .requestMatchers("/live-rooms/**")
+                                        .hasAnyAuthority("ROLE_LIVEROOM_OWNER", "ROLE_ADMIN", "ROLE_MANAGER")
                                         .anyRequest()
                                         .authenticated()
                 )

@@ -103,4 +103,5 @@ application:
       subscriptionUrl: "https://api.revenuecat.com/v2/subscribers/"
       secret-key: '${RC_SECRET_API_KEY}'
   corsAllowedOrigins: '${HTTPS_WEB_ORIGIN:https://intouchup.com}, ${WWW_WEB_ORIGIN:https://www.intouchup.com}'
+  webSocketAllowedOrigins: '${HTTPS_WEB_ORIGIN:https://intouchup.com}, ${WWW_WEB_ORIGIN:https://www.intouchup.com}'
 

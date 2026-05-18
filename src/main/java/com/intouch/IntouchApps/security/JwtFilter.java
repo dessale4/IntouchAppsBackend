@@ -58,6 +58,10 @@ public class JwtFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        if (servletPath.startsWith("/ws/live-rooms")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         if (clientTypeHeader == null ||
                 !(MOBILE_CLIENT.equals(clientTypeHeader) ||
                         WEB_CLIENT.equals(clientTypeHeader))) {

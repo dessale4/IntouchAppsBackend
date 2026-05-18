@@ -42,5 +42,6 @@ public class UserRole {
     private String removedBy;
     private Instant removedAt;
     @Column(nullable = false)
+    @Builder.Default
     private boolean active = true;
 }

@@ -23,6 +23,9 @@ import java.util.*;
 import static com.intouch.IntouchApps.handler.BusinessErrorCodes.*;
 import static org.springframework.http.HttpStatus.*;
 
+import jakarta.persistence.OptimisticLockException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+
 @RestControllerAdvice
 @Component
 public class GlobalExceptionHandler {
@@ -64,6 +67,19 @@ public class GlobalExceptionHandler {
                                 .businessErrorCode(ACCOUNT_NOT_FOUND.getCode())
                                 .businessErrorDescription(exp.getMessage())
                                 .error(exp.getMessage())
+                                .build()
+                );
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ExceptionResponse> handleException(UserNotFoundException ex) {
+        return ResponseEntity
+                .status(NOT_FOUND)
+                .body(
+                        ExceptionResponse.builder()
+                                .businessErrorCode(ACCOUNT_NOT_FOUND.getCode())
+                                .businessErrorDescription(ex.getMessage())
+                                .error(ex.getMessage())
                                 .build()
                 );
     }
@@ -188,28 +204,49 @@ public class GlobalExceptionHandler {
                 );
     }
 
+    //    @ExceptionHandler(DataIntegrityViolationException.class)
+//    @ResponseBody
+//    public ResponseEntity<ExceptionResponse> handleDuplicateKeyException(DataIntegrityViolationException exp) {
+////        System.out.println("DataIntegrityViolationException thrown ===>");
+//        ConstraintViolationException cause = (ConstraintViolationException) exp.getCause();
+//        String failedField = cause.getConstraintName();
+//        try {
+//            String[] failedFieldArr = failedField.split("_");
+//            failedField = failedFieldArr[2];
+//        } catch (Exception ex) {
+//
+//        }
+//
+////        System.out.println(cause);
+//        return ResponseEntity
+//                .status(CONFLICT)
+//                .body(
+//                        ExceptionResponse.builder()
+//                                .businessErrorCode(APPLICATION_ERROR.getCode())
+//                                .businessErrorDescription("Duplicate entry found.")
+//                                .error("Your entry to " + failedField + " is taken")
+////                                .error(cause.getErrorMessage())
+//                                .build()
+//                );
+//    }
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseBody
     public ResponseEntity<ExceptionResponse> handleDuplicateKeyException(DataIntegrityViolationException exp) {
-//        System.out.println("DataIntegrityViolationException thrown ===>");
-        ConstraintViolationException cause = (ConstraintViolationException) exp.getCause();
-        String failedField = cause.getConstraintName();
-        try {
-            String[] failedFieldArr = failedField.split("_");
-            failedField = failedFieldArr[2];
-        } catch (Exception ex) {
+        //        System.out.println("DataIntegrityViolationException thrown ===>");
+        String failedField = "field";
 
+        if (exp.getCause() instanceof ConstraintViolationException cause &&
+                cause.getConstraintName() != null) {
+            failedField = cause.getConstraintName();
         }
 
-//        System.out.println(cause);
         return ResponseEntity
                 .status(CONFLICT)
                 .body(
                         ExceptionResponse.builder()
-                                .businessErrorCode(APPLICATION_ERROR.getCode())
-                                .businessErrorDescription("Duplicate entry found.")
-                                .error("Your entry to " + failedField + " is taken")
-//                                .error(cause.getErrorMessage())
+                                .businessErrorCode(UNIQUE_KEY_FIELD.getCode())
+                                .businessErrorDescription("Duplicate or conflicting entry found.")
+                                .error("Your entry conflicts with existing data: " + failedField)
                                 .build()
                 );
     }
@@ -227,6 +264,36 @@ public class GlobalExceptionHandler {
                                 .build()
                 );
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ExceptionResponse> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity
+                .status(CONFLICT)
+                .body(
+                        ExceptionResponse.builder()
+                                .businessErrorCode(LIVE_ROOM_CONFLICT.getCode())
+                                .businessErrorDescription(LIVE_ROOM_CONFLICT.getDescription())
+                                .error(ex.getMessage())
+                                .build()
+                );
+    }
+
+    @ExceptionHandler({
+            OptimisticLockException.class,
+            ObjectOptimisticLockingFailureException.class
+    })
+    public ResponseEntity<ExceptionResponse> handleOptimisticLock(Exception ex) {
+        return ResponseEntity
+                .status(CONFLICT)
+                .body(
+                        ExceptionResponse.builder()
+                                .businessErrorCode(OPTIMISTIC_LOCK_ERROR.getCode())
+                                .businessErrorDescription(OPTIMISTIC_LOCK_ERROR.getDescription())
+                                .error(OPTIMISTIC_LOCK_ERROR.getDescription())
+                                .build()
+                );
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ExceptionResponse> handleException(RuntimeException exp) {
 //    System.out.println("RuntimeException thrown ===>");

@@ -5,7 +5,7 @@ import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
 import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultMapper;
 import com.intouch.IntouchApps.handler.AWSFileUploadException;
 import com.intouch.IntouchApps.utils.AppObjectMapper;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Value;

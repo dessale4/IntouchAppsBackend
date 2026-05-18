@@ -46,4 +46,9 @@ public class UserRoleController {
     public ResponseEntity<List<UserRoleResponse>> getActiveRolesByUser(@PathVariable Integer userId) {
         return ResponseEntity.ok(userRoleService.getActiveRolesByUser(userId));
     }
+    public ResponseEntity<?> getAllUserRoles(){
+//        users.stream()
+//                .flatMap(user -> user.getRoles().stream())
+        return null;
+    }
 }
