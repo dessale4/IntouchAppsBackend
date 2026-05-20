@@ -26,6 +26,10 @@ public interface InTouchRoomGroupRepository
     void resetProgressByRoomId(@Param("roomId") Long roomId);
 
     long countByRoomId(Long roomId);
-
-    void deleteByRoomId(Long roomId);
+    @Modifying
+    @Query("""
+                DELETE FROM InTouchRoomGroup g
+                WHERE g.room.id = :roomId
+            """)
+    void deleteByRoomId(@Param("roomId") Long roomId);
 }

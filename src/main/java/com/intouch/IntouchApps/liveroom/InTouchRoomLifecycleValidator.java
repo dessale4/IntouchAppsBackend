@@ -44,9 +44,9 @@ public class InTouchRoomLifecycleValidator {
     }
 
     public void ensureCanDelete(InTouchRoom room) {
-        if (room.getStatus() == InTouchRoomStatus.STARTED) {
+        if (room.getStatus() == InTouchRoomStatus.STARTED || room.getStatus() == InTouchRoomStatus.PAUSED) {
             throw new IllegalStateException(
-                    "Started room should be cancelled before deletion."
+                    room.getStatus().toString() +" room should be cancelled before deletion."
             );
         }
     }
@@ -61,6 +61,32 @@ public class InTouchRoomLifecycleValidator {
             throw new IllegalStateException(
                     "Completed or cancelled room cannot be cancelled again."
             );
+        }
+    }
+
+    public void ensureCanPause(InTouchRoom room) {
+        if (room.getStatus() != InTouchRoomStatus.STARTED) {
+            throw new IllegalStateException("Only started rooms can be paused.");
+        }
+    }
+
+    public void ensureCanResume(InTouchRoom room) {
+        if (room.getStatus() != InTouchRoomStatus.PAUSED) {
+            throw new IllegalStateException("Only paused rooms can be resumed.");
+        }
+    }
+
+    public void ensureGameplayAllowed(InTouchRoom room) {
+        if (room.getStatus() == InTouchRoomStatus.PAUSED) {
+            throw new IllegalStateException("Room is paused.");
+        }
+
+        if (room.getStatus() == InTouchRoomStatus.CANCELLED) {
+            throw new IllegalStateException("Room is cancelled.");
+        }
+
+        if (room.getStatus() != InTouchRoomStatus.STARTED) {
+            throw new IllegalStateException("Room is not started yet.");
         }
     }
 }

@@ -45,8 +45,12 @@ public interface InTouchRoomGroupParticipantRepository
             @Param("roomId") Long roomId,
             @Param("groupId") Long groupId
     );
-
-    void deleteByRoomId(Long roomId);
+    @Modifying
+    @Query("""
+                DELETE FROM InTouchRoomGroupParticipant gp
+                WHERE gp.room.id = :roomId
+            """)
+    void deleteByRoomId(@Param("roomId") Long roomId);
 
     @Query("""
                 SELECT gp.participant

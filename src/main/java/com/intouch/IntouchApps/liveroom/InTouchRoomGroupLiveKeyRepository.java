@@ -19,39 +19,45 @@ public interface InTouchRoomGroupLiveKeyRepository
             Long groupId,
             LiveKeyBuildStatus status
     );
+
     long countByRoomIdAndAssignedParticipantId(
             Long roomId,
             Long assignedParticipantId
     );
+
     long countByRoomId(Long roomId);
+
     @Query("""
-    SELECT k
-    FROM InTouchRoomGroupLiveKey k
-    WHERE k.room.id = :roomId
-      AND k.assignedParticipant.id = :participantId
-      AND k.status = 'PLACED'
-    ORDER BY k.currentRow ASC, k.currentColumn ASC
-""")
+                SELECT k
+                FROM InTouchRoomGroupLiveKey k
+                WHERE k.room.id = :roomId
+                  AND k.assignedParticipant.id = :participantId
+                  AND k.status = 'PLACED'
+                ORDER BY k.currentRow ASC, k.currentColumn ASC
+            """)
     List<InTouchRoomGroupLiveKey> findPlacedKeysForParticipant(
             @Param("roomId") Long roomId,
             @Param("participantId") Long participantId
     );
+
     long countByRoomIdAndAssignedParticipantMobileUserId(
             Long roomId,
             Integer mobileUserId
     );
+
     @Query("""
-    SELECT k
-    FROM InTouchRoomGroupLiveKey k
-    WHERE k.room.id = :roomId
-      AND k.assignedParticipant.id = :participantId
-      AND k.status = 'NOT_STARTED'
-    ORDER BY k.assignedOrder ASC
-""")
+                SELECT k
+                FROM InTouchRoomGroupLiveKey k
+                WHERE k.room.id = :roomId
+                  AND k.assignedParticipant.id = :participantId
+                  AND k.status = 'NOT_STARTED'
+                ORDER BY k.assignedOrder ASC
+            """)
     List<InTouchRoomGroupLiveKey> findRemainingKeysForParticipant(
             @Param("roomId") Long roomId,
             @Param("participantId") Long participantId
     );
+
     @Query("""
                 SELECT k
                 FROM InTouchRoomGroupLiveKey k
@@ -83,7 +89,6 @@ public interface InTouchRoomGroupLiveKeyRepository
             Long roomId,
             Long groupId
     );
-
     @Query("""
                 SELECT k
                 FROM InTouchRoomGroupLiveKey k
@@ -92,7 +97,6 @@ public interface InTouchRoomGroupLiveKeyRepository
                 WHERE k.id = :groupLiveKeyId
                   AND u.id = :currentUserId
                   AND p.status = 'ACTIVE'
-                  AND k.room.status = 'STARTED'
             """)
     Optional<InTouchRoomGroupLiveKey> findAssignedKeyForCurrentUser(
             @Param("groupLiveKeyId") Long groupLiveKeyId,

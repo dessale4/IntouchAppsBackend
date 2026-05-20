@@ -67,20 +67,20 @@ public class JwtFilter extends OncePerRequestFilter {
                         WEB_CLIENT.equals(clientTypeHeader))) {
             log.info("not an allowed client type => {} <====> {}", clientTypeHeader, servletPath);
 
-            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE); // 503
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            response.getWriter().write("""
-                    //                    {
-                    //                      "message": "Sorry, we are making updates to the service. Please check again later."
-                    //                    }
-                                        {
-                                          "message": "Sorry, Please install the new Update. A very required update made to the app."
-                                        }
-                                        """);
+//            response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE); // 503
+//            response.setContentType("application/json");
+//            response.setCharacterEncoding("UTF-8");
+//            response.getWriter().write("""
+//                    //                    {
+//                    //                      "message": "Sorry, we are making updates to the service. Please check again later."
+//                    //                    }
+//                                        {
+//                                          "message": "Sorry, Please install the new Update. A very required update made to the app."
+//                                        }
+//                                        """);
 //            log.info("not an allowed client type => " + clientTypeHeader +"<====>"+ servletPath);
 //            exceptionResolver.resolveException(request, response, null, new RuntimeException("Sorry We are making updates to the service. Please check in some time."));
-//            exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed now"));
+            exceptionResolver.resolveException(request, response, null, new RuntimeException("Please ReInstall the App First. We updated it"));
             return;
         }
 

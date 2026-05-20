@@ -97,4 +97,11 @@ public interface InTouchRoomParticipantRepository
             String displayName,
             ParticipantStatus status
     );
+
+    @Modifying
+    @Query("""
+                DELETE FROM InTouchRoomParticipant p
+                WHERE p.room.id = :roomId
+            """)
+    void deleteByRoomId(@Param("roomId") Long roomId);
 }

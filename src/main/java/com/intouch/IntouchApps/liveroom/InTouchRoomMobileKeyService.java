@@ -44,6 +44,8 @@ public class InTouchRoomMobileKeyService {
                 findKeyForCurrentParticipant(groupLiveKeyId);
 
         InTouchRoom room = selectedKey.getRoom();
+        lifecycleValidator.ensureGameplayAllowed(room);
+
         InTouchRoomGroup group = selectedKey.getGroup();
         InTouchRoomParticipant participant = selectedKey.getAssignedParticipant();
 
@@ -157,6 +159,7 @@ public class InTouchRoomMobileKeyService {
     @Transactional
     public Long removeKey(Long groupLiveKeyId) {
         InTouchRoomGroupLiveKey key = findKeyForCurrentParticipant(groupLiveKeyId);
+        lifecycleValidator.ensureGameplayAllowed(key.getRoom());
         lifecycleValidator.ensureParticipantCanUpdate(key.getRoom());
         if (key.getRoom().getBuildMode() != LiveRoomBuildMode.REMOVE_KEYS) {
             throw new IllegalStateException("Room is not in REMOVE_KEYS mode.");
@@ -251,46 +254,41 @@ public class InTouchRoomMobileKeyService {
         groupLiveKeyRepository.save(selectedKey);
         patternScoringService.evaluatePatternsAfterPlacement(selectedKey.getRoom(), selectedKey.getGroup(), targetSlot.getTargetRow(), targetSlot.getTargetColumn());
     }
+private InTouchRoomGroupLiveKey findKeyForCurrentParticipant(
+        Long groupLiveKeyId
+) {
+    Integer currentUserId = securityUtils.getCurrentUserId();
 
-    private InTouchRoomGroupLiveKey findKeyForCurrentParticipant(
-            Long groupLiveKeyId
-    ) {
-        Integer currentUserId = securityUtils.getCurrentUserId();
+    InTouchRoomGroupLiveKey key =
+            groupLiveKeyRepository
+                    .findAssignedKeyForCurrentUser(
+                            groupLiveKeyId,
+                            currentUserId
+                    )
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Key not found or not assigned to current participant."
+                    ));
 
-        InTouchRoomGroupLiveKey key =
-                groupLiveKeyRepository
-                        .findAssignedKeyForCurrentUser(
-                                groupLiveKeyId,
-                                currentUserId
-                        )
-                        .orElseThrow(() -> new IllegalArgumentException(
-                                "Key not found or not assigned to current participant."
-                        ));
+    lifecycleValidator.ensureGameplayAllowed(key.getRoom());
 
-        if (key.getRoom().getStatus() != InTouchRoomStatus.STARTED) {
-            throw new IllegalStateException("Live room is not started.");
-        }
+    InTouchRoomParticipant participant = key.getAssignedParticipant();
 
-        InTouchRoomParticipant participant = key.getAssignedParticipant();
-
-        if (participant == null ||
-                participant.getMobileUser() == null ||
-                !participant.getMobileUser().getId().equals(currentUserId)) {
-            throw new IllegalStateException(
-                    "This key is not assigned to the current participant."
-            );
-        }
-
-        if (participant.getStatus() != ParticipantStatus.ACTIVE
-//                &&  participant.getStatus() != ParticipantStatus.JOINED
-        ) {
-            throw new IllegalStateException(
-                    "Participant is not active in this room."
-            );
-        }
-
-        return key;
+    if (participant == null ||
+            participant.getMobileUser() == null ||
+            !participant.getMobileUser().getId().equals(currentUserId)) {
+        throw new IllegalStateException(
+                "This key is not assigned to the current participant."
+        );
     }
+
+    if (participant.getStatus() != ParticipantStatus.ACTIVE) {
+        throw new IllegalStateException(
+                "Participant is not active in this room."
+        );
+    }
+
+    return key;
+}
 
     private void publishProgress(Long roomId) {
         progressPublisher.publishRoomProgress(roomId);

@@ -17,7 +17,6 @@ public class InTouchRoomOwnerController {
 
     private final InTouchRoomOwnerCommandService ownerCommandService;
     private final InTouchRoomStartService startService;
-    private final InTouchRoomOwnerService ownerService;
     private final InTouchRoomMapper mapper;
     private final InTouchRoomProgressService progressService;
     private  final InTouchRoomOwnerQueryService ownerQueryService;
@@ -139,16 +138,25 @@ public class InTouchRoomOwnerController {
         startService.startRoom(roomId);
         return ResponseEntity.noContent().build();
     }
-
+    @PostMapping("/{roomId}/pause")
+    public ResponseEntity<Void> pauseRoom(@PathVariable Long roomId) {
+        ownerCommandService.pauseRoom(roomId);
+        return ResponseEntity.noContent().build();
+    }
+    @PostMapping("/{roomId}/resume")
+    public ResponseEntity<Void> resumeRoom(@PathVariable Long roomId) {
+        ownerCommandService.resumeRoom(roomId);
+        return ResponseEntity.noContent().build();
+    }
     @PostMapping("/{roomId}/cancel")
     public ResponseEntity<Void> cancelRoom(@PathVariable Long roomId) {
-        ownerService.cancelRoom(roomId);
+        ownerCommandService.cancelRoom(roomId);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{roomId}")
     public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId) {
-        ownerService.deleteRoom(roomId);
+        ownerCommandService.deleteRoom(roomId);
         return ResponseEntity.noContent().build();
     }
     @GetMapping("/{roomId}/progress")

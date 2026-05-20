@@ -31,7 +31,7 @@ public class InTouchRoomOwnerCommandService {
     private final InTouchRoomMapper mapper;
     private final InTouchRoomGroupLiveKeyRepository groupLiveKeyRepository;
     private final InTouchRoomGroupBoardRowRepository boardRowRepository;
-
+    private final InTouchRoomProgressPublisher progressPublisher;
     @Transactional
     public InTouchRoom createRoom(CreateRoomRequest request) {
         Integer currentUserId = securityUtils.getCurrentUserId();
@@ -282,7 +282,70 @@ public class InTouchRoomOwnerCommandService {
             }
         }
     }
+    @Transactional
+    public void cancelRoom(Long roomId) {
+        InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
 
+        accessValidator.ensureRoomOwnerOrAdmin(room);
+        lifecycleValidator.ensureCanCancel(room);
+
+        room.setStatus(InTouchRoomStatus.CANCELLED);
+
+        roomRepository.save(room);
+        progressPublisher.publishRoomProgress(roomId);
+    }
+
+    @Transactional
+    public void deleteRoom(Long roomId) {
+        InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
+
+        accessValidator.ensureRoomOwnerOrAdmin(room);
+        lifecycleValidator.ensureCanDelete(room);
+
+        groupLiveKeyRepository.deleteByRoomId(roomId);
+        boardRowRepository.deleteByRoomId(roomId);
+        groupParticipantRepository.deleteByRoomId(roomId);
+        participantRepository.deleteByRoomId(roomId);
+        groupRepository.deleteByRoomId(roomId);
+        liveKeyRepository.deleteByRoomId(roomId);
+        liveKeyFamilyRepository.deleteByRoomId(roomId);
+
+
+//        room.setDeleted(true);
+//        room.setStatus(InTouchRoomStatus.DELETED);
+
+//        roomRepository.save(room);
+        roomRepository.delete(room);
+    }
+    @Transactional
+    public void pauseRoom(Long roomId) {
+        InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
+
+        accessValidator.ensureRoomOwnerOrAdmin(room);
+        lifecycleValidator.ensureCanPause(room);
+
+        room.setStatus(InTouchRoomStatus.PAUSED);
+        roomRepository.save(room);
+
+        progressPublisher.publishRoomProgress(roomId);
+    }
+    @Transactional
+    public void resumeRoom(Long roomId) {
+        InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
+
+        accessValidator.ensureRoomOwnerOrAdmin(room);
+        lifecycleValidator.ensureCanResume(room);
+
+
+        room.setStatus(InTouchRoomStatus.STARTED);
+        roomRepository.save(room);
+
+        progressPublisher.publishRoomProgress(roomId);
+    }
     @Transactional
     public void createTemplate(
             Long roomId,
