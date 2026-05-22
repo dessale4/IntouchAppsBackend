@@ -1,14 +1,19 @@
 package com.intouch.IntouchApps.user;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+import lombok.*;
 
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class AssignRoleRequest {
 
     @NotNull(message = "User id is required")
     private Integer userId;
 
-    @NotNull(message = "Role id is required")
-    private Integer roleId;
+    @NotBlank(message = "Role name is required")
+    private String roleName;
 }

@@ -20,11 +20,9 @@ public class UserRoleController {
     @PostMapping("/assign")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> assignRole(
-            @Valid @RequestBody AssignRoleRequest request,
-            Principal principal
+            @Valid @RequestBody AssignRoleRequest assignRoleRequest
     ) {
-        String assignedBy = principal.getName(); // current logged-in admin username
-        userRoleService.assignRole(request.getUserId(), request.getRoleId(), assignedBy);
+        userRoleService.assignRole(assignRoleRequest);
 
         return ResponseEntity.ok(Map.of("message", "Role assigned successfully"));
     }
@@ -32,11 +30,9 @@ public class UserRoleController {
     @PutMapping("/remove")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Map<String, String>> removeRole(
-            @Valid @RequestBody RemoveRoleRequest request,
-            Principal principal
+            @Valid @RequestBody RemoveRoleRequest removeRoleRequest
     ) {
-        String removedBy = principal.getName();
-        userRoleService.removeRole(request.getUserId(), request.getRoleId(), removedBy);
+        userRoleService.removeRole(removeRoleRequest);
 
         return ResponseEntity.ok(Map.of("message", "Role removed successfully"));
     }

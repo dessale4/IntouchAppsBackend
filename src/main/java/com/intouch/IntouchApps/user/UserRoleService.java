@@ -1,13 +1,19 @@
 package com.intouch.IntouchApps.user;
 
+import com.intouch.IntouchApps.adminAccess.AdminUserSummaryResponse;
+import com.intouch.IntouchApps.constants.RoleConstants;
 import com.intouch.IntouchApps.role.Role;
 import com.intouch.IntouchApps.role.RoleRepository;
+import com.intouch.IntouchApps.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -16,27 +22,41 @@ public class UserRoleService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
+    private final SecurityUtils securityUtils;
+    private static final Set<String> ASSIGNABLE_ROLES = Set.of(
+            RoleConstants.ROLE_LIVEROOM_OWNER
+    );
 
     @Transactional
-    public void assignRole(Integer userId, Integer roleId, String assignedBy) {
+    public void assignRole(AssignRoleRequest request) {
+        String currentUsername = securityUtils.getCurrentUsername();
+
+        String roleName = request.getRoleName().trim().toUpperCase();
+
+        if (!ASSIGNABLE_ROLES.contains(roleName)) {
+            throw new IllegalArgumentException(
+                    "This role cannot be assigned from admin UI."
+            );
+        }
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found."));
+
         boolean alreadyAssigned = userRoleRepository
-                .findByUserIdAndRoleIdAndActiveTrue(userId, roleId)
+                .findByUserIdAndRoleIdAndActiveTrue(user.getId(), role.getId())
                 .isPresent();
 
         if (alreadyAssigned) {
             throw new IllegalStateException("Role is already assigned to the user.");
         }
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
-
-        Role role = roleRepository.findById(roleId)
-                .orElseThrow(() -> new RuntimeException("Role not found with id: " + roleId));
-
         UserRole userRole = UserRole.builder()
                 .user(user)
                 .role(role)
-                .assignedBy(assignedBy)
+                .assignedBy(currentUsername)
                 .assignedAt(Instant.now())
                 .active(true)
                 .build();
@@ -45,12 +65,31 @@ public class UserRoleService {
     }
 
     @Transactional
-    public void removeRole(Integer userId, Integer roleId, String removedBy) {
-        UserRole userRole = userRoleRepository.findByUserIdAndRoleIdAndActiveTrue(userId, roleId)
-                .orElseThrow(() -> new RuntimeException("Active role assignment not found"));
+    public void removeRole(RemoveRoleRequest request) {
+        String currentUsername = securityUtils.getCurrentUsername();
+
+        String roleName = request.getRoleName().trim().toUpperCase();
+
+        if (!ASSIGNABLE_ROLES.contains(roleName)) {
+            throw new IllegalArgumentException(
+                    "This role cannot be removed from admin UI."
+            );
+        }
+
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found."));
+
+        User user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found."));
+
+        UserRole userRole = userRoleRepository
+                .findByUserIdAndRoleIdAndActiveTrue(user.getId(), role.getId())
+                .orElseThrow(() -> new IllegalStateException(
+                        "Active role assignment not found."
+                ));
 
         userRole.setActive(false);
-        userRole.setRemovedBy(removedBy);
+        userRole.setRemovedBy(currentUsername);
         userRole.setRemovedAt(Instant.now());
     }
 
