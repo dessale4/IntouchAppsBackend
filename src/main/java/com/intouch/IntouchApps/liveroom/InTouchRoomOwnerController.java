@@ -91,7 +91,7 @@ public class InTouchRoomOwnerController {
     }
     @PostMapping("/{roomId}/reset")
     public ResponseEntity<Void> resetCompletedRoom(@PathVariable Long roomId) {
-        ownerCommandService.resetCompletedRoom(roomId);
+        ownerCommandService.resetRoom(roomId);
         return ResponseEntity.noContent().build();
     }
     @PostMapping("/{roomId}/template")

@@ -37,19 +37,22 @@ public class AuthenticationController {
     ) throws AccountNotActivatedException, MessagingException, ParseException {
         return ResponseEntity.ok(service.authenticate(request, response));
     }
+
     @GetMapping("/activate-account")
     public String confirmEmail(
-            @RequestParam String token,  @RequestParam String userEmail
+            @RequestParam String token, @RequestParam String userEmail
     ) throws MessagingException {
-       return service.activateAccount(token, userEmail);
+        return service.activateAccount(token, userEmail);
     }
+
     @GetMapping("/sendCodeWithEmail")
     public void requestConfirmation(
             @RequestParam String userEmail,
             @RequestParam String emailReason
     ) throws MessagingException, AccountNotActivatedException {
-       service.confirmEmailRequest(userEmail, emailReason);
+        service.confirmEmailRequest(userEmail, emailReason);
     }
+
     @PostMapping("/resetPassword")
     public void resetPassword(
             @RequestBody @Valid AuthenticationRequest request
@@ -66,6 +69,6 @@ public class AuthenticationController {
 
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) throws ParseException {
-         return ResponseEntity.ok( service.getJwtRefreshToken(request, response));
-        }
+        return service.getJwtRefreshToken(request, response);
+    }
 }

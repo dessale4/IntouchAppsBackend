@@ -17,7 +17,14 @@ public class InTouchRoomLifecycleValidator {
             );
         }
     }
-
+    public void ensureCanReset(InTouchRoom room) {
+        if (room.getStatus() != InTouchRoomStatus.COMPLETED &&
+                room.getStatus() != InTouchRoomStatus.CANCELLED) {
+            throw new IllegalStateException(
+                    "Only completed or cancelled rooms can be reset."
+            );
+        }
+    }
     public void ensureCanStart(InTouchRoom room) {
         if (room.getDeleted()) {
             throw new IllegalStateException("Deleted room cannot be started.");

@@ -1,6 +1,7 @@
 package com.intouch.IntouchApps.liveroom.withPattern;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -25,4 +26,19 @@ public interface InTouchRoomBoardPatternCellRepository
             @Param("targetRow") Integer targetRow,
             @Param("targetColumn") Integer targetColumn
     );
+
+    @Modifying
+    @Query("""
+                DELETE FROM InTouchRoomBoardPattern p
+                WHERE p.room.id = :roomId
+            """)
+    void deleteByRoomId(@Param("roomId") Long roomId);
+
+    @Modifying
+    @Query("""
+                DELETE FROM InTouchRoomBoardPatternCell c
+                WHERE c.pattern.room.id = :roomId
+            """)
+    void deleteByPatternRoomId(@Param("roomId") Long roomId);
+
 }

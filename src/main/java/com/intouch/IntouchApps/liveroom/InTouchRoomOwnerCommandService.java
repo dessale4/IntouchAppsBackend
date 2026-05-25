@@ -3,6 +3,9 @@ package com.intouch.IntouchApps.liveroom;
 import com.intouch.IntouchApps.liveroom.dto.*;
 import com.intouch.IntouchApps.liveroom.dto.response.*;
 import com.intouch.IntouchApps.liveroom.repository.InTouchRoomGroupBoardRowRepository;
+import com.intouch.IntouchApps.liveroom.withPattern.InTouchRoomBoardPatternCellRepository;
+import com.intouch.IntouchApps.liveroom.withPattern.InTouchRoomBoardPatternRepository;
+import com.intouch.IntouchApps.liveroom.withPattern.InTouchRoomGroupPatternProgressRepository;
 import com.intouch.IntouchApps.security.SecurityUtils;
 import com.intouch.IntouchApps.user.User;
 import com.intouch.IntouchApps.user.UserRepository;
@@ -32,6 +35,9 @@ public class InTouchRoomOwnerCommandService {
     private final InTouchRoomGroupLiveKeyRepository groupLiveKeyRepository;
     private final InTouchRoomGroupBoardRowRepository boardRowRepository;
     private final InTouchRoomProgressPublisher progressPublisher;
+    private final InTouchRoomBoardPatternCellRepository boardPatternCellRepository;
+    private final InTouchRoomGroupPatternProgressRepository groupPatternProgressRepository;
+    private final InTouchRoomBoardPatternRepository boardPatternRepository;
     @Transactional
     public InTouchRoom createRoom(CreateRoomRequest request) {
         Integer currentUserId = securityUtils.getCurrentUserId();
@@ -304,6 +310,10 @@ public class InTouchRoomOwnerCommandService {
         accessValidator.ensureRoomOwnerOrAdmin(room);
         lifecycleValidator.ensureCanDelete(room);
 
+        groupPatternProgressRepository.deleteByRoomId(roomId);
+        boardPatternCellRepository.deleteByPatternRoomId(roomId);
+        boardPatternRepository.deleteByRoomId(roomId);
+
         groupLiveKeyRepository.deleteByRoomId(roomId);
         boardRowRepository.deleteByRoomId(roomId);
         groupParticipantRepository.deleteByRoomId(roomId);
@@ -312,11 +322,6 @@ public class InTouchRoomOwnerCommandService {
         liveKeyRepository.deleteByRoomId(roomId);
         liveKeyFamilyRepository.deleteByRoomId(roomId);
 
-
-//        room.setDeleted(true);
-//        room.setStatus(InTouchRoomStatus.DELETED);
-
-//        roomRepository.save(room);
         roomRepository.delete(room);
     }
     @Transactional
@@ -480,28 +485,27 @@ public class InTouchRoomOwnerCommandService {
         groupParticipantRepository.deleteByRoomIdAndGroupId(roomId, groupId);
         groupRepository.delete(group);
     }
-
     @Transactional
-    public void resetCompletedRoom(Long roomId) {
+    public void resetRoom(Long roomId) {
         InTouchRoom room = roomRepository.findById(roomId)
-                .orElseThrow(() -> new IllegalStateException("Room not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
 
-        accessValidator.ensureRoomOwner(room);
-
-        if (room.getStatus() != InTouchRoomStatus.COMPLETED) {
-            throw new IllegalStateException("Only completed rooms can be reset.");
-        }
+        accessValidator.ensureRoomOwnerOrAdmin(room);
+        lifecycleValidator.ensureCanReset(room);
 
         groupLiveKeyRepository.deleteByRoomId(roomId);
         boardRowRepository.deleteByRoomId(roomId);
+        groupPatternProgressRepository.deleteByRoomId(roomId);
 
         groupRepository.resetProgressByRoomId(roomId);
-
         participantRepository.resetParticipantsAfterRoomReset(roomId);
+
         room.setStatus(InTouchRoomStatus.DRAFT);
         room.setStartedAt(null);
         room.setCompletedAt(null);
 
         roomRepository.save(room);
+
+        progressPublisher.publishRoomProgress(roomId);
     }
 }

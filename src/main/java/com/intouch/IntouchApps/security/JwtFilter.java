@@ -99,20 +99,15 @@ public class JwtFilter extends OncePerRequestFilter {
         }
         try {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
-//                System.out.println("authHeader ==> " + request.getServletPath());
                 jwt = authHeader.substring(7);
-            } else if (request.getCookies() != null) {
-//                System.out.println("request.getCookies ==> " + request.getServletPath());
-                jwt = Arrays.stream(request.getCookies())
-                        .filter(c -> c.getName().equals("jwt"))
-                        .findFirst()
-                        .map(Cookie::getValue)
-                        .orElse(null);
-//                System.out.println(jwt + "is request jwt cookie for ==> " + request.getServletPath());
             } else {
-
-                log.info("not a jwt Auth => " + servletPath);
-                exceptionResolver.resolveException(request, response, null, new RuntimeException("Access not allowed"));
+                log.info("Missing Authorization Bearer access token => {}", servletPath);
+                exceptionResolver.resolveException(
+                        request,
+                        response,
+                        null,
+                        new RuntimeException("Access not allowed")
+                );
                 return;
             }
             if (jwt == null || jwt.isEmpty() || jwt.isBlank()) {

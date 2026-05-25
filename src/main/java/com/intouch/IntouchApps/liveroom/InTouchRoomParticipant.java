@@ -56,4 +56,5 @@ public class InTouchRoomParticipant extends BaseEntity {
     private Instant activatedAt;
     @Column(name = "active_in_room")
     private Boolean activeInRoom = false;
+    private Instant completedAt;
 }

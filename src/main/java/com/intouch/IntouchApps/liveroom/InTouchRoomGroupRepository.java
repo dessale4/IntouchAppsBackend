@@ -20,12 +20,14 @@ public interface InTouchRoomGroupRepository
                 SET g.completedAt = null,
                     g.errorCount = 0,
                     g.score = 0,
-                    g.completedPatternCount = 0
+                    g.completedPatternCount = 0,
+                    g.completedKeyCount = 0
                 WHERE g.room.id = :roomId
             """)
     void resetProgressByRoomId(@Param("roomId") Long roomId);
 
     long countByRoomId(Long roomId);
+
     @Modifying
     @Query("""
                 DELETE FROM InTouchRoomGroup g

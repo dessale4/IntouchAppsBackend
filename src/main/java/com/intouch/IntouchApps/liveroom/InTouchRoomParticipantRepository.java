@@ -34,14 +34,15 @@ public interface InTouchRoomParticipantRepository
 
     @Modifying
     @Query("""
-                UPDATE InTouchRoomParticipant p
-                SET p.status = 'INVITED',
-                    p.mobileUser = null,
-                    p.activeInRoom = false,
-                    p.claimedAt = null,
-                    p.activatedAt = null
-                WHERE p.room.id = :roomId
-            """)
+    UPDATE InTouchRoomParticipant p
+    SET p.status = 'INVITED',
+        p.mobileUser = null,
+        p.activeInRoom = false,
+        p.claimedAt = null,
+        p.activatedAt = null,
+        p.completedAt = null
+    WHERE p.room.id = :roomId
+""")
     void resetParticipantsAfterRoomReset(@Param("roomId") Long roomId);
 
     @Query("""
