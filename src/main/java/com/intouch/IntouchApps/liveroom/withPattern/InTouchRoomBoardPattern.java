@@ -35,4 +35,7 @@ public class InTouchRoomBoardPattern extends BaseEntity {
     @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;
+    @Builder.Default
+    @Column(name = "key_family_key", length = 50, nullable = false)
+    private String keyFamilyKey = "";
 }

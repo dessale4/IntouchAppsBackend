@@ -15,4 +15,5 @@ public class LiveRoomSetupResponse {
     private List<LiveRoomGroupResponse> groups;
     private List<LiveRoomParticipantResponse> participants;
     private List<LiveRoomAssignmentResponse> assignments;
+    private List<LiveRoomTemplateFamilyResponse> templateFamilies;
 }

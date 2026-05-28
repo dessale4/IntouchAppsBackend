@@ -3,6 +3,7 @@ package com.intouch.IntouchApps.liveroom;
 import com.intouch.IntouchApps.liveroom.dto.*;
 import com.intouch.IntouchApps.liveroom.dto.response.*;
 import com.intouch.IntouchApps.liveroom.repository.InTouchRoomGroupBoardRowRepository;
+import com.intouch.IntouchApps.liveroom.withPattern.InTouchRoomBoardPattern;
 import com.intouch.IntouchApps.liveroom.withPattern.InTouchRoomBoardPatternCellRepository;
 import com.intouch.IntouchApps.liveroom.withPattern.InTouchRoomBoardPatternRepository;
 import com.intouch.IntouchApps.liveroom.withPattern.InTouchRoomGroupPatternProgressRepository;
@@ -173,12 +174,21 @@ public class InTouchRoomOwnerCommandService {
                         .stream()
                         .map(this::toAssignmentResponse)
                         .toList();
-
+        List<LiveRoomTemplateFamilyResponse> templateFamilies =
+                liveKeyFamilyRepository
+                        .findByRoomIdAndActiveTrueOrderByRowIndexAsc(roomId)
+                        .stream()
+                        .map(family -> LiveRoomTemplateFamilyResponse.builder()
+                                .key(family.getFamilyCode())
+                                .name(family.getFamilyName())
+                                .build())
+                        .toList();
         return LiveRoomSetupResponse.builder()
                 .room(mapper.toRoomResponse(room))
                 .groups(groups)
                 .participants(participants)
                 .assignments(assignments)
+                .templateFamilies(templateFamilies)
                 .build();
     }
 
