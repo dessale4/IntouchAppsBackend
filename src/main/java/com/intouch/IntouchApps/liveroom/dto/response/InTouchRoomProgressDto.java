@@ -1,6 +1,7 @@
 package com.intouch.IntouchApps.liveroom.dto.response;
 
 import com.intouch.IntouchApps.liveroom.InTouchRoomStatus;
+import com.intouch.IntouchApps.liveroom.LiveRoomBuildMode;
 import com.intouch.IntouchApps.liveroom.dto.response.InTouchRoomGroupProgressDto;
 import lombok.*;
 
@@ -19,4 +20,5 @@ public class InTouchRoomProgressDto {
 
     private List<InTouchRoomGroupProgressDto> groups;
     private String roomTitle;
+    private LiveRoomBuildMode buildMode;
 }

@@ -2,6 +2,7 @@ package com.intouch.IntouchApps.liveroom;
 
 import com.intouch.IntouchApps.liveroom.dto.JoinRoomRequest;
 import com.intouch.IntouchApps.liveroom.dto.request.MobilePlaceKeyRequest;
+import com.intouch.IntouchApps.liveroom.dto.request.MobileRemoveKeyRequest;
 import com.intouch.IntouchApps.liveroom.dto.response.MobileJoinRoomResponse;
 import com.intouch.IntouchApps.liveroom.dto.response.MobileMyBoardResponse;
 import com.intouch.IntouchApps.liveroom.dto.response.MobileNextKeyResponse;
@@ -44,11 +45,13 @@ public class InTouchRoomMobileController {
 
     @PostMapping("/keys/{groupLiveKeyId}/remove")
     public ResponseEntity<MobileNextKeyResponse> removeKey(
-            @PathVariable Long groupLiveKeyId
+            @PathVariable Long groupLiveKeyId,
+            @RequestBody MobileRemoveKeyRequest request
     ) {
-        Long roomId = mobileKeyService.removeKey(groupLiveKeyId);
+        MobileNextKeyResponse response =
+                mobileKeyService.removeKey(groupLiveKeyId, request);
 
-        return ResponseEntity.ok(mobileQueryService.getNextKeyForCurrentParticipant(roomId));
+        return ResponseEntity.ok(response);
     }
     @GetMapping("/{roomId}/my-board")
     public ResponseEntity<MobileMyBoardResponse> getMyBoard(

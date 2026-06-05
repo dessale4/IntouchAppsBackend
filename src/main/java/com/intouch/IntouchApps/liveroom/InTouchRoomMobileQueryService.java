@@ -57,14 +57,22 @@ public class InTouchRoomMobileQueryService {
     @Transactional(readOnly = true)
     public MobileMyBoardResponse getMyBoard(Long roomId) {
         Integer currentUserId = securityUtils.getCurrentUserId();
+        InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
+        List<InTouchRoomGroupLiveKey> boardKeys;
 
-        List<InTouchRoomGroupLiveKey> placedKeys =
-                groupLiveKeyRepository.findMyPlacedKeysForBoard(
-                        roomId,
-                        currentUserId
-                );
-
-        if (placedKeys.isEmpty()) {
+        if (room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS) {
+            boardKeys = groupLiveKeyRepository.findMyRemoveModeBoardKeys(
+                    roomId,
+                    currentUserId
+            );
+        } else {
+            boardKeys = groupLiveKeyRepository.findMyPlacedKeysForBoard(
+                    roomId,
+                    currentUserId
+            );
+        }
+        if (boardKeys.isEmpty()) {
             return MobileMyBoardResponse.builder()
                     .roomId(roomId)
                     .rows(List.of())
@@ -72,13 +80,13 @@ public class InTouchRoomMobileQueryService {
         }
 
         InTouchRoomParticipant participant =
-                placedKeys.get(0).getAssignedParticipant();
+                boardKeys.get(0).getAssignedParticipant();
 
         InTouchRoomGroup group =
-                placedKeys.get(0).getGroup();
+                boardKeys.get(0).getGroup();
 
         Map<Integer, List<InTouchRoomGroupLiveKey>> keysByRow =
-                placedKeys.stream()
+                boardKeys.stream()
                         .collect(Collectors.groupingBy(
                                 InTouchRoomGroupLiveKey::getCurrentRow,
                                 TreeMap::new,
@@ -99,6 +107,7 @@ public class InTouchRoomMobileQueryService {
                                             .map(k -> MobileBoardCellResponse.builder()
                                                     .columnIndex(k.getCurrentColumn())
                                                     .keyValue(k.getKeyValue())
+                                                    .groupLiveKeyId(k.getId())
                                                     .status(k.getStatus())
                                                     .build())
                                             .toList();
@@ -142,6 +151,7 @@ public class InTouchRoomMobileQueryService {
                 .orElseThrow(() -> new IllegalArgumentException("Room not found."));
 
         if (room.getStatus() != InTouchRoomStatus.STARTED &&
+                room.getStatus() != InTouchRoomStatus.PAUSED &&
                 room.getStatus() != InTouchRoomStatus.COMPLETED) {
             throw new IllegalStateException("Live room has not started.");
         }
@@ -157,27 +167,34 @@ public class InTouchRoomMobileQueryService {
                     "You are not assigned to this live room."
             );
         }
+        LiveKeyBuildStatus remainingStatus =
+                room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
+                        ? LiveKeyBuildStatus.IN_PROGRESS
+                        : LiveKeyBuildStatus.NOT_STARTED;
 
         List<InTouchRoomGroupLiveKey> nextKeys =
-                groupLiveKeyRepository.findMyNextAvailableKeys(roomId, currentUserId);
-
+                groupLiveKeyRepository.findMyNextAvailableKeys(
+                        roomId,
+                        currentUserId,
+                        remainingStatus
+                );
         long totalAssigned =
                 groupLiveKeyRepository.countByRoomIdAndAssignedParticipantMobileUserId(
                         roomId,
                         currentUserId
                 );
 
-        long remaining =
-                groupLiveKeyRepository.countByRoomIdAndAssignedParticipantMobileUserIdAndStatus(
-                        roomId,
-                        currentUserId,
-                        LiveKeyBuildStatus.NOT_STARTED
-                );
-
         LiveKeyBuildStatus completedStatus =
                 room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
                         ? LiveKeyBuildStatus.REMOVED
                         : LiveKeyBuildStatus.PLACED;
+
+        long remaining =
+                groupLiveKeyRepository.countByRoomIdAndAssignedParticipantMobileUserIdAndStatus(
+                        roomId,
+                        currentUserId,
+                        remainingStatus
+                );
 
         long completed =
                 groupLiveKeyRepository.countByRoomIdAndAssignedParticipantMobileUserIdAndStatus(

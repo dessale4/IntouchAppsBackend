@@ -59,6 +59,7 @@ public class InTouchRoomCompletionService {
             }
 
             if (!groupCompleted) {
+                group.setCompletedAt(null);
                 allGroupsCompleted = false;
             }
         }

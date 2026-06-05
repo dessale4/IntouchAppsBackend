@@ -165,4 +165,13 @@ public class InTouchRoomOwnerController {
     ) {
         return ResponseEntity.ok(progressService.getRoomProgress(roomId));
     }
+    @GetMapping("/{roomId}/groups/{groupId}/board")
+    public ResponseEntity<LiveRoomGroupBoardResponse> getGroupBoard(
+            @PathVariable Long roomId,
+            @PathVariable Long groupId
+    ) {
+        return ResponseEntity.ok(
+                ownerQueryService.getGroupBoard(roomId, groupId)
+        );
+    }
 }

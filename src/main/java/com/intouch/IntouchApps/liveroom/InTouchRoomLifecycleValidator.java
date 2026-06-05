@@ -85,11 +85,11 @@ public class InTouchRoomLifecycleValidator {
 
     public void ensureGameplayAllowed(InTouchRoom room) {
         if (room.getStatus() == InTouchRoomStatus.PAUSED) {
-            throw new IllegalStateException("Room is paused.");
+            throw new IllegalStateException("Room paused. Please wait for the room owner to resume it.");
         }
 
         if (room.getStatus() == InTouchRoomStatus.CANCELLED) {
-            throw new IllegalStateException("Room is cancelled.");
+            throw new IllegalStateException("Room has been cancelled by the owner.");
         }
 
         if (room.getStatus() != InTouchRoomStatus.STARTED) {

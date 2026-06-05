@@ -62,49 +62,56 @@ public class InTouchRoomStartService {
 
         progressPublisher.publishRoomProgress(roomId);
     }
+private void createGroupLiveKeys(
+        InTouchRoom room,
+        InTouchRoomGroup group,
+        List<InTouchRoomLiveKey> templateKeys,
+        List<InTouchRoomParticipant> participants
+) {
+    List<InTouchRoomLiveKey> keysForAssignment = new ArrayList<>(templateKeys);
 
-    private void createGroupLiveKeys(
-            InTouchRoom room,
-            InTouchRoomGroup group,
-            List<InTouchRoomLiveKey> templateKeys,
-            List<InTouchRoomParticipant> participants
-    ) {
-        List<InTouchRoomLiveKey> keysForAssignment = new ArrayList<>(templateKeys);
-
-        if (Boolean.TRUE.equals(room.getShuffleKeys())) {
-            Collections.shuffle(keysForAssignment, SECURE_RANDOM);
-        }
-
-        List<InTouchRoomGroupLiveKey> groupLiveKeys = new ArrayList<>();
-
-        for (int i = 0; i < keysForAssignment.size(); i++) {
-            InTouchRoomLiveKey sourceKey = keysForAssignment.get(i);
-
-            InTouchRoomParticipant assignedParticipant =
-                    participants.get(i % participants.size());
-
-            InTouchRoomGroupLiveKey groupLiveKey = InTouchRoomGroupLiveKey.builder()
-                    .room(room)
-                    .group(group)
-                    .sourceLiveKey(sourceKey)
-                    .assignedParticipant(assignedParticipant)
-                    .keyValue(sourceKey.getKeyValue())
-                    .keyType(sourceKey.getKeyType())
-                    .keyFamilyId(sourceKey.getKeyFamilyId())
-                    .assignedOrder(i)
-                    .currentRow(null)
-                    .currentColumn(null)
-                    .targetRow(sourceKey.getTargetRow())
-                    .targetColumn(sourceKey.getTargetColumn())
-                    .status(LiveKeyBuildStatus.NOT_STARTED)
-                    .build();
-
-            groupLiveKeys.add(groupLiveKey);
-        }
-
-        groupLiveKeyRepository.saveAll(groupLiveKeys);
+    if (Boolean.TRUE.equals(room.getShuffleKeys())) {
+        Collections.shuffle(keysForAssignment, SECURE_RANDOM);
     }
 
+    boolean removeMode = room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS;
+
+    List<InTouchRoomGroupLiveKey> groupLiveKeys = new ArrayList<>();
+
+    for (int i = 0; i < keysForAssignment.size(); i++) {
+        InTouchRoomLiveKey sourceKey = keysForAssignment.get(i);
+
+        InTouchRoomParticipant assignedParticipant =
+                participants.get(i % participants.size());
+
+        Integer currentRow = removeMode ? sourceKey.getTargetRow() : null;
+        Integer currentColumn = removeMode ? sourceKey.getTargetColumn() : null;
+
+        LiveKeyBuildStatus initialStatus = removeMode
+                ? LiveKeyBuildStatus.IN_PROGRESS
+                : LiveKeyBuildStatus.NOT_STARTED;
+
+        InTouchRoomGroupLiveKey groupLiveKey = InTouchRoomGroupLiveKey.builder()
+                .room(room)
+                .group(group)
+                .sourceLiveKey(sourceKey)
+                .assignedParticipant(assignedParticipant)
+                .keyValue(sourceKey.getKeyValue())
+                .keyType(sourceKey.getKeyType())
+                .keyFamilyId(sourceKey.getKeyFamilyId())
+                .assignedOrder(i)
+                .currentRow(currentRow)
+                .currentColumn(currentColumn)
+                .targetRow(sourceKey.getTargetRow())
+                .targetColumn(sourceKey.getTargetColumn())
+                .status(initialStatus)
+                .build();
+
+        groupLiveKeys.add(groupLiveKey);
+    }
+
+    groupLiveKeyRepository.saveAll(groupLiveKeys);
+}
     private void activateParticipants(Long roomId) {
         List<InTouchRoomParticipant> participants =
                 participantRepository.findByRoomIdAndStatusNot(roomId, ParticipantStatus.REMOVED);

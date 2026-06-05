@@ -18,4 +18,6 @@ public class OwnerLiveRoomParticipantSummaryResponse {
     private Long remainingKeys;
 
     private MobileLiveKeyResponse waitingKey;
+    private Integer mobileUserId;
+    private String mobileUsername;
 }

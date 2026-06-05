@@ -80,4 +80,8 @@ public class InTouchRoomGroupLiveKey extends BaseEntity {
     private Long version;
     private String keyFamilyId;
     private Instant placedAt;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "removed_by_participant_id")
+    private InTouchRoomParticipant removedByParticipant;
+    private Instant removedAt;
 }

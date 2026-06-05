@@ -37,11 +37,13 @@ public class InTouchRoomOwnerQueryService {
             throw new IllegalStateException("Group does not belong to this room.");
         }
 
-        List<InTouchRoomGroupLiveKey> placedKeys =
-                groupLiveKeyRepository.findPlacedKeysForOwnerGroupBoard(roomId, groupId);
+        List<InTouchRoomGroupLiveKey> boardKeys =
+                room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
+                        ? groupLiveKeyRepository.findOwnerRemainingRemoveKeys(roomId, groupId)
+                        : groupLiveKeyRepository.findPlacedKeysForOwnerGroupBoard(roomId, groupId);
 
         Map<Integer, List<InTouchRoomGroupLiveKey>> keysByRow =
-                placedKeys.stream()
+                boardKeys.stream()
                         .collect(Collectors.groupingBy(
                                 InTouchRoomGroupLiveKey::getCurrentRow,
                                 TreeMap::new,
@@ -71,7 +73,7 @@ public class InTouchRoomOwnerQueryService {
 
         List<OwnerLiveRoomParticipantSummaryResponse> participants =
                 assignments.stream()
-                        .map(gp -> toParticipantSummary(roomId, groupId, gp.getParticipant()))
+                        .map(gp -> toParticipantSummary(room, groupId, gp.getParticipant()))
                         .toList();
 
         long totalKeys =
@@ -79,12 +81,15 @@ public class InTouchRoomOwnerQueryService {
                         roomId,
                         groupId
                 );
-
+        LiveKeyBuildStatus groupCompletedStatus =
+                room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
+                        ? LiveKeyBuildStatus.REMOVED
+                        : LiveKeyBuildStatus.PLACED;
         long completedKeys =
                 groupLiveKeyRepository.countByRoomIdAndGroupIdAndStatus(
                         roomId,
                         groupId,
-                        LiveKeyBuildStatus.PLACED
+                        groupCompletedStatus
                 );
 
         double progressPercent =
@@ -122,33 +127,44 @@ public class InTouchRoomOwnerQueryService {
                 .build();
     }
     private OwnerLiveRoomParticipantSummaryResponse toParticipantSummary(
-            Long roomId,
+            InTouchRoom room,
             Long groupId,
             InTouchRoomParticipant participant
     ) {
+        LiveKeyBuildStatus completedStatus =
+                room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
+                        ? LiveKeyBuildStatus.REMOVED
+                        : LiveKeyBuildStatus.PLACED;
+
+        LiveKeyBuildStatus remainingStatus =
+                room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
+                        ? LiveKeyBuildStatus.IN_PROGRESS
+                        : LiveKeyBuildStatus.NOT_STARTED;
+
         long completed =
                 groupLiveKeyRepository
                         .countByRoomIdAndGroupIdAndAssignedParticipantIdAndStatus(
-                                roomId,
+                                room.getId(),
                                 groupId,
                                 participant.getId(),
-                                LiveKeyBuildStatus.PLACED
+                                completedStatus
                         );
 
         long remaining =
                 groupLiveKeyRepository
                         .countByRoomIdAndGroupIdAndAssignedParticipantIdAndStatus(
-                                roomId,
+                                room.getId(),
                                 groupId,
                                 participant.getId(),
-                                LiveKeyBuildStatus.NOT_STARTED
+                                remainingStatus
                         );
 
         List<InTouchRoomGroupLiveKey> waitingKeys =
-                groupLiveKeyRepository.findWaitingKeysForParticipantInGroup(
-                        roomId,
+                groupLiveKeyRepository.findWaitingKeysForParticipantInGroupByStatus(
+                        room.getId(),
                         groupId,
-                        participant.getId()
+                        participant.getId(),
+                        remainingStatus
                 );
 
         MobileLiveKeyResponse waitingKey =
@@ -164,6 +180,16 @@ public class InTouchRoomOwnerQueryService {
                 .completedKeys(completed)
                 .remainingKeys(remaining)
                 .waitingKey(waitingKey)
+                .mobileUserId(
+                        participant.getMobileUser() == null
+                                ? null
+                                : participant.getMobileUser().getId()
+                )
+                .mobileUsername(
+                        participant.getMobileUser() == null
+                                ? null
+                                : participant.getMobileUser().getUserName()
+                )
                 .build();
     }
     @Transactional(readOnly = true)
@@ -204,6 +230,15 @@ public class InTouchRoomOwnerQueryService {
                         roomId,
                         participantId
                 );
+        LiveKeyBuildStatus completedStatus =
+                room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
+                        ? LiveKeyBuildStatus.REMOVED
+                        : LiveKeyBuildStatus.PLACED;
+
+        LiveKeyBuildStatus remainingStatus =
+                room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
+                        ? LiveKeyBuildStatus.IN_PROGRESS
+                        : LiveKeyBuildStatus.NOT_STARTED;
 
         long completed =
                 groupLiveKeyRepository
@@ -211,7 +246,7 @@ public class InTouchRoomOwnerQueryService {
                                 roomId,
                                 group.getId(),
                                 participantId,
-                                LiveKeyBuildStatus.PLACED
+                                completedStatus
                         );
 
         long remaining =
@@ -220,19 +255,20 @@ public class InTouchRoomOwnerQueryService {
                                 roomId,
                                 group.getId(),
                                 participantId,
-                                LiveKeyBuildStatus.NOT_STARTED
+                                remainingStatus
                         );
-
-        List<InTouchRoomGroupLiveKey> placedKeys =
-                groupLiveKeyRepository.findPlacedKeysForParticipant(
+        List<InTouchRoomGroupLiveKey> completedKeys =
+                groupLiveKeyRepository.findKeysForParticipantByStatus(
                         roomId,
-                        participantId
+                        participantId,
+                        completedStatus
                 );
 
         List<InTouchRoomGroupLiveKey> remainingKeys =
-                groupLiveKeyRepository.findRemainingKeysForParticipant(
+                groupLiveKeyRepository.findKeysForParticipantByStatus(
                         roomId,
-                        participantId
+                        participantId,
+                        remainingStatus
                 );
 
         MobileLiveKeyResponse waitingKey =
@@ -253,7 +289,7 @@ public class InTouchRoomOwnerQueryService {
                 .totalAssignedKeys(totalAssigned)
                 .waitingKey(waitingKey)
                 .placedKeys(
-                        placedKeys.stream()
+                        completedKeys.stream()
                                 .map(this::toMobileLiveKeyResponse)
                                 .toList()
                 )
@@ -279,6 +315,45 @@ public class InTouchRoomOwnerQueryService {
                 .targetRow(key.getTargetRow())
                 .targetColumn(key.getTargetColumn())
                 .status(key.getStatus())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public LiveRoomGroupBoardResponse getGroupBoard(Long roomId, Long groupId) {
+        InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
+
+        accessValidator.ensureRoomOwnerOrAdmin(room);
+
+        InTouchRoomGroup group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new IllegalArgumentException("Group not found."));
+
+        if (!group.getRoom().getId().equals(roomId)) {
+            throw new IllegalStateException("Group does not belong to this room.");
+        }
+
+        List<InTouchRoomGroupLiveKey> keys =
+                room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
+                        ? groupLiveKeyRepository.findOwnerRemainingRemoveKeys(roomId, groupId)
+                        : groupLiveKeyRepository.findOwnerPlacedBoardKeys(roomId, groupId);
+
+        List<LiveRoomGroupBoardCellResponse> cells = keys.stream()
+                .map(k -> LiveRoomGroupBoardCellResponse.builder()
+                        .groupLiveKeyId(k.getId())
+                        .keyValue(k.getKeyValue())
+                        .keyFamilyId(k.getKeyFamilyId())
+                        .rowIndex(k.getCurrentRow())
+                        .columnIndex(k.getCurrentColumn())
+                        .status(k.getStatus())
+                        .build())
+                .toList();
+
+        return LiveRoomGroupBoardResponse.builder()
+                .roomId(roomId)
+                .groupId(groupId)
+                .groupName(group.getName())
+                .buildMode(room.getBuildMode())
+                .cells(cells)
                 .build();
     }
 }

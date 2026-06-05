@@ -1,4 +1,5 @@
 package com.intouch.IntouchApps.liveroom.dto.response;
+import com.intouch.IntouchApps.liveroom.LiveRoomBuildMode;
 import lombok.*;
 
 import java.time.Instant;
@@ -24,4 +25,6 @@ public class InTouchRoomGroupProgressDto {
     private Instant completedAt;
     private String roomCode;
     private String roomTitle;
+    private LiveRoomBuildMode buildMode;
+
 }

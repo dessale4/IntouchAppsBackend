@@ -39,10 +39,35 @@ public interface InTouchRoomGroupLiveKeyRepository
             @Param("roomId") Long roomId,
             @Param("participantId") Long participantId
     );
-
+    @Query("""
+        SELECT k
+        FROM InTouchRoomGroupLiveKey k
+        WHERE k.room.id = :roomId
+          AND k.assignedParticipant.id = :participantId
+          AND k.status = :status
+        ORDER BY k.assignedOrder ASC
+    """)
+    List<InTouchRoomGroupLiveKey> findKeysForParticipantByStatus(
+            @Param("roomId") Long roomId,
+            @Param("participantId") Long participantId,
+            @Param("status") LiveKeyBuildStatus status
+    );
     long countByRoomIdAndAssignedParticipantMobileUserId(
             Long roomId,
             Integer mobileUserId
+    );
+
+    @Query("""
+                SELECT k
+                FROM InTouchRoomGroupLiveKey k
+                WHERE k.room.id = :roomId
+                  AND k.group.id = :groupId
+                  AND k.status = 'PLACED'
+                ORDER BY k.currentRow ASC, k.currentColumn ASC
+            """)
+    List<InTouchRoomGroupLiveKey> findOwnerPlacedBoardKeys(
+            @Param("roomId") Long roomId,
+            @Param("groupId") Long groupId
     );
 
     @Query("""
@@ -61,10 +86,26 @@ public interface InTouchRoomGroupLiveKeyRepository
     @Query("""
                 SELECT k
                 FROM InTouchRoomGroupLiveKey k
+                WHERE k.room.id = :roomId
+                  AND k.group.id = :groupId
+                  AND k.status <> 'REMOVED'
+                  AND k.currentRow IS NOT NULL
+                  AND k.currentColumn IS NOT NULL
+                ORDER BY k.assignedOrder ASC
+            """)
+    List<InTouchRoomGroupLiveKey> findOwnerRemainingRemoveKeys(
+            @Param("roomId") Long roomId,
+            @Param("groupId") Long groupId
+    );
+
+    @Query("""
+                SELECT k
+                FROM InTouchRoomGroupLiveKey k
                 JOIN k.assignedParticipant p
                 JOIN p.mobileUser u
                 WHERE k.room.id = :roomId
                   AND u.id = :currentUserId
+                  AND p.status = 'ACTIVE'
                   AND k.status = 'PLACED'
                 ORDER BY k.currentRow ASC, k.currentColumn ASC
             """)
@@ -89,6 +130,7 @@ public interface InTouchRoomGroupLiveKeyRepository
             Long roomId,
             Long groupId
     );
+
     @Query("""
                 SELECT k
                 FROM InTouchRoomGroupLiveKey k
@@ -135,7 +177,6 @@ public interface InTouchRoomGroupLiveKeyRepository
             @Param("roomId") Long roomId,
             @Param("groupId") Long groupId
     );
-
     @Query("""
                 SELECT k
                 FROM InTouchRoomGroupLiveKey k
@@ -144,12 +185,13 @@ public interface InTouchRoomGroupLiveKeyRepository
                 WHERE k.room.id = :roomId
                   AND u.id = :currentUserId
                   AND p.status = 'ACTIVE'
-                  AND k.status = 'NOT_STARTED'
+                  AND k.status = :status
                 ORDER BY k.assignedOrder ASC
             """)
     List<InTouchRoomGroupLiveKey> findMyNextAvailableKeys(
             @Param("roomId") Long roomId,
-            @Param("currentUserId") Integer currentUserId
+            @Param("currentUserId") Integer currentUserId,
+            @Param("status") LiveKeyBuildStatus status
     );
 
     @Query("""
@@ -253,4 +295,42 @@ public interface InTouchRoomGroupLiveKeyRepository
             @Param("participantId") Long participantId
     );
 
+    @Query("""
+                SELECT k
+                FROM InTouchRoomGroupLiveKey k
+                JOIN k.group g
+                JOIN InTouchRoomGroupParticipant gp
+                     ON gp.group.id = g.id
+                JOIN gp.participant p
+                JOIN p.mobileUser u
+                WHERE k.room.id = :roomId
+                  AND u.id = :currentUserId
+                  AND p.status = 'ACTIVE'
+                  AND (
+                        k.removedByParticipant IS NULL
+                        OR k.removedByParticipant.id <> p.id
+                      )
+                  AND k.currentRow IS NOT NULL
+                  AND k.currentColumn IS NOT NULL
+                ORDER BY k.currentRow ASC, k.currentColumn ASC
+            """)
+    List<InTouchRoomGroupLiveKey> findMyRemoveModeBoardKeys(
+            @Param("roomId") Long roomId,
+            @Param("currentUserId") Integer currentUserId
+    );
+    @Query("""
+        SELECT k
+        FROM InTouchRoomGroupLiveKey k
+        WHERE k.room.id = :roomId
+          AND k.group.id = :groupId
+          AND k.assignedParticipant.id = :participantId
+          AND k.status = :status
+        ORDER BY k.assignedOrder ASC
+    """)
+    List<InTouchRoomGroupLiveKey> findWaitingKeysForParticipantInGroupByStatus(
+            @Param("roomId") Long roomId,
+            @Param("groupId") Long groupId,
+            @Param("participantId") Long participantId,
+            @Param("status") LiveKeyBuildStatus status
+    );
 }

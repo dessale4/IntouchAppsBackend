@@ -43,11 +43,14 @@ public class InTouchRoomParticipantService {
                         participant.getRoom().getId(),
                         participant.getId()
                 );
-
+        boolean canPlay =
+                participant.getRoom().getStatus() == InTouchRoomStatus.STARTED ||
+                        participant.getRoom().getStatus() == InTouchRoomStatus.PAUSED;
         InTouchRoomGroupParticipant groupAssignment =
                 groupAssignments.isEmpty() ? null : groupAssignments.get(0);
         return MobileJoinRoomResponse.builder()
                 .roomId(participant.getRoom().getId())
+                .buildMode(participant.getRoom().getBuildMode())
                 .roomTitle(participant.getRoom().getTitle())
                 .roomCode(participant.getRoom().getRoomCode())
                 .roomStatus(participant.getRoom().getStatus())
@@ -57,6 +60,7 @@ public class InTouchRoomParticipantService {
                 .participantStatus(participant.getStatus())
                 .groupId(groupAssignment != null ? groupAssignment.getGroup().getId() : null)
                 .groupName(groupAssignment != null ? groupAssignment.getGroup().getName() : null)
+                .canPlay(canPlay)
                 .build();
     }
 }

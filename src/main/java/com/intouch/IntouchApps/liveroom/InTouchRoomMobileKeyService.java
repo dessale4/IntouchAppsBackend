@@ -1,6 +1,7 @@
 package com.intouch.IntouchApps.liveroom;
 
 import com.intouch.IntouchApps.liveroom.dto.request.MobilePlaceKeyRequest;
+import com.intouch.IntouchApps.liveroom.dto.request.MobileRemoveKeyRequest;
 import com.intouch.IntouchApps.liveroom.dto.response.MobileBoardCellResponse;
 import com.intouch.IntouchApps.liveroom.dto.response.MobileBoardRowResponse;
 import com.intouch.IntouchApps.liveroom.dto.response.MobileMyBoardResponse;
@@ -157,30 +158,79 @@ public class InTouchRoomMobileKeyService {
     }
 
     @Transactional
-    public Long removeKey(Long groupLiveKeyId) {
-        InTouchRoomGroupLiveKey key = findKeyForCurrentParticipant(groupLiveKeyId);
-        lifecycleValidator.ensureGameplayAllowed(key.getRoom());
-        lifecycleValidator.ensureParticipantCanUpdate(key.getRoom());
-        if (key.getRoom().getBuildMode() != LiveRoomBuildMode.REMOVE_KEYS) {
+    public MobileNextKeyResponse removeKey(
+            Long targetGroupLiveKeyId,
+            MobileRemoveKeyRequest request
+    ) {
+        InTouchRoomGroupLiveKey targetKey =
+                findKeyForCurrentParticipant(targetGroupLiveKeyId);
+
+        InTouchRoom room = targetKey.getRoom();
+        InTouchRoomGroup group = targetKey.getGroup();
+        InTouchRoomParticipant participant = targetKey.getAssignedParticipant();
+
+        lifecycleValidator.ensureGameplayAllowed(room);
+        lifecycleValidator.ensureParticipantCanUpdate(room);
+
+        if (room.getStatus() != InTouchRoomStatus.STARTED) {
+            throw new IllegalStateException("Live room is not started.");
+        }
+
+        if (room.getBuildMode() != LiveRoomBuildMode.REMOVE_KEYS) {
             throw new IllegalStateException("Room is not in REMOVE_KEYS mode.");
         }
-        if (key.getStatus() == LiveKeyBuildStatus.COMPLETED) {
-            throw new IllegalStateException("Completed key cannot be removed.");
-        }
-        if (key.getStatus() == LiveKeyBuildStatus.REMOVED) {
-            throw new IllegalStateException("Key already removed.");
+
+        if (targetKey.getStatus() == LiveKeyBuildStatus.REMOVED) {
+            throw new IllegalStateException("This key has already been removed.");
         }
 
-        key.setCurrentRow(null);
-        key.setCurrentColumn(null);
-        key.setStatus(LiveKeyBuildStatus.REMOVED);
+        InTouchRoomGroupLiveKey clickedKey =
+                groupLiveKeyRepository.findById(request.getClickedGroupLiveKeyId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("Clicked key not found.")
+                        );
 
-        groupLiveKeyRepository.save(key);
-        completionService.updateCompletionStatus(key.getRoom().getId());
-        publishProgress(key.getRoom().getId());
-        return key.getRoom().getId();
+        boolean sameRoom =
+                clickedKey.getRoom().getId().equals(room.getId());
+
+        boolean sameGroup =
+                clickedKey.getGroup().getId().equals(group.getId());
+
+        if (!sameRoom || !sameGroup) {
+            groupErrorService.increaseGroupErrorCount(group.getId());
+            publishProgress(room.getId());
+            throw new IllegalStateException("Invalid key selected.");
+        }
+
+        boolean clickedAssignedToParticipant =
+                clickedKey.getAssignedParticipant() != null &&
+                        clickedKey.getAssignedParticipant().getId()
+                                .equals(participant.getId());
+
+        boolean clickedIsTarget =
+                clickedKey.getId().equals(targetKey.getId());
+
+        boolean clickedAlreadyRemoved =
+                clickedKey.getStatus() == LiveKeyBuildStatus.REMOVED;
+
+        if (!clickedIsTarget || !clickedAssignedToParticipant || clickedAlreadyRemoved) {
+            groupErrorService.increaseGroupErrorCount(group.getId());
+            publishProgress(room.getId());
+            throw new IllegalStateException("Wrong key selected.");
+        }
+
+        clickedKey.setStatus(LiveKeyBuildStatus.REMOVED);
+        clickedKey.setRemovedByParticipant(participant);
+        clickedKey.setRemovedAt(Instant.now());
+
+        groupLiveKeyRepository.save(clickedKey);
+
+        completionService.updateCompletionStatus(room.getId());
+
+        publishProgress(room.getId());
+
+        return mobileQueryService.getNextKeyForCurrentParticipant(room.getId());
     }
-
     private void placeByExactTargetPosition(InTouchRoomGroupLiveKey key, Integer requestedRow, Integer requestedColumn) {
         if (requestedRow == null || requestedColumn == null) {
             groupErrorService.increaseGroupErrorCount(key.getGroup().getId());

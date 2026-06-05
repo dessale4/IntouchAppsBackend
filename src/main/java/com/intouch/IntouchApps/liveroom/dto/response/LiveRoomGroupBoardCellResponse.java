@@ -8,10 +8,11 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MobileBoardCellResponse {
-
-    private Integer columnIndex;
-    private String keyValue;
-    private LiveKeyBuildStatus status;
+public class LiveRoomGroupBoardCellResponse {
     private Long groupLiveKeyId;
+    private String keyValue;
+    private String keyFamilyId;
+    private Integer rowIndex;
+    private Integer columnIndex;
+    private LiveKeyBuildStatus status;
 }

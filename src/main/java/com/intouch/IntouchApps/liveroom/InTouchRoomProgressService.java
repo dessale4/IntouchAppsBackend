@@ -31,6 +31,7 @@ public class InTouchRoomProgressService {
 
         return InTouchRoomProgressDto.builder()
                 .roomId(room.getId())
+                .buildMode(room.getBuildMode())
                 .roomCode(room.getRoomCode())
                 .roomStatus(room.getStatus())
                 .groups(groupProgressList)
@@ -81,6 +82,7 @@ public class InTouchRoomProgressService {
                 .completedAt(group.getCompletedAt())
                 .errorCount(group.getErrorCount())
                 .score(group.getScore())
+                .buildMode(room.getBuildMode())
                 .completedPatternCount(group.getCompletedPatternCount())
                 .build();
 

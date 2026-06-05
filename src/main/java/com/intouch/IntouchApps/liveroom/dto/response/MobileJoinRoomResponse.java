@@ -1,6 +1,7 @@
 package com.intouch.IntouchApps.liveroom.dto.response;
 
 import com.intouch.IntouchApps.liveroom.InTouchRoomStatus;
+import com.intouch.IntouchApps.liveroom.LiveRoomBuildMode;
 import com.intouch.IntouchApps.liveroom.ParticipantStatus;
 import lombok.*;
 
@@ -23,4 +24,6 @@ public class MobileJoinRoomResponse {
 
     private Long groupId;
     private String groupName;
+    private LiveRoomBuildMode buildMode;
+    private Boolean canPlay;
 }
