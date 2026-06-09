@@ -20,6 +20,7 @@ public class InTouchRoomParticipantService {
     private final UserRepository userRepository;
     private final SecurityUtils securityUtils;
     private final InTouchRoomGroupParticipantRepository groupParticipantRepository;
+    private final InTouchRoomProgressPublisher progressPublisher;
     @Transactional
     public MobileJoinRoomResponse joinRoom(String roomCode, String participantCode) {
         Integer currentUserId = securityUtils.getCurrentUserId();
@@ -48,6 +49,7 @@ public class InTouchRoomParticipantService {
                         participant.getRoom().getStatus() == InTouchRoomStatus.PAUSED;
         InTouchRoomGroupParticipant groupAssignment =
                 groupAssignments.isEmpty() ? null : groupAssignments.get(0);
+        progressPublisher.publishRoomProgress(participant.getRoom().getId());
         return MobileJoinRoomResponse.builder()
                 .roomId(participant.getRoom().getId())
                 .buildMode(participant.getRoom().getBuildMode())

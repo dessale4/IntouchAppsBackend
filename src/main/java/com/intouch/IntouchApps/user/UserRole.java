@@ -8,11 +8,13 @@ import lombok.*;
 import java.time.Instant;
 
 @Entity
-@Table(
-        name = "user_roles_tbl",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_user_role_active", columnNames = {"user_id", "role_id", "active"})
-        }
+@Table( //partial unique index(uk_user_role_active_true) has been enforced on db level manually
+        name = "user_roles_tbl"
+        //partial unique index(uk_user_role_active_true) has been enforced on db level manually
+//        ,
+//        uniqueConstraints = {
+//                @UniqueConstraint(name = "uk_user_role_active", columnNames = {"user_id", "role_id", "active"})
+//        }
 )
 @Getter
 @Setter

@@ -19,7 +19,9 @@ public class UserAdminController {
     private final UserAdminService userAdminService;
 
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize(
+            "hasAnyAuthority('ROLE_ADMIN','ROLE_LIVEROOM_MANAGER')"
+    )
     public ResponseEntity<Page<AdminUserSummaryResponse>> searchUsers(
             @RequestParam(required = false) String search,
             @PageableDefault(size = 20, sort = "id") Pageable pageable

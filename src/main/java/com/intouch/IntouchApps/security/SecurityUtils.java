@@ -5,6 +5,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import java.util.Set;
+
 @Component
 public class SecurityUtils {
     public CustomUserDetails getCurrentUserDetails() {
@@ -38,5 +40,31 @@ public class SecurityUtils {
 
     public String getCurrentFullName() {
         return getCurrentUserDetails().getFullName();
+    }
+    public boolean hasRole(String roleName) {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        return authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority -> authority.getAuthority().equals(roleName));
+    }
+    public boolean hasAnyRole(String... roleNames) {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        Set<String> requestedRoles = Set.of(roleNames);
+
+        return authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority -> requestedRoles.contains(authority.getAuthority()));
     }
 }

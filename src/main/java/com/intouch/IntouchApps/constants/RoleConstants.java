@@ -10,6 +10,7 @@ public final class RoleConstants {
     public static final String ROLE_APP_STORE_REVIEWER = "ROLE_APP_STORE_REVIEWER";
     public static final String ROLE_PLAY_STORE_REVIEWER = "ROLE_PLAY_STORE_REVIEWER";
     public static final String ROLE_LIVEROOM_OWNER ="ROLE_LIVEROOM_OWNER";
+    public static final String ROLE_LIVEROOM_MANAGER ="ROLE_LIVEROOM_MANAGER";
     private RoleConstants() {
     }
 }

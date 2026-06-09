@@ -174,4 +174,17 @@ public class InTouchRoomOwnerController {
                 ownerQueryService.getGroupBoard(roomId, groupId)
         );
     }
+    @GetMapping("/{roomId}/participant-access")
+    public ResponseEntity<LiveRoomParticipantAccessResponse> getParticipantAccess(
+            @PathVariable Long roomId
+    ) {
+        return ResponseEntity.ok(ownerQueryService.getParticipantAccess(roomId));
+    }
+    @PostMapping("/{roomId}/participants/assign-evenly")
+    public ResponseEntity<Void> assignParticipantsEvenly(
+            @PathVariable Long roomId
+    ) {
+        ownerCommandService.assignParticipantsEvenly(roomId);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -33,6 +33,19 @@ public interface InTouchRoomGroupParticipantRepository
             """)
     long countDistinctAssignedActiveParticipants(@Param("roomId") Long roomId);
 
+    @Query("""
+                SELECT gp
+                FROM InTouchRoomGroupParticipant gp
+                JOIN FETCH gp.group g
+                JOIN FETCH gp.participant p
+                LEFT JOIN FETCH p.mobileUser u
+                WHERE gp.room.id = :roomId
+                ORDER BY g.sortOrder ASC, p.displayName ASC
+            """)
+    List<InTouchRoomGroupParticipant> findAssignmentsForParticipantAccess(
+            @Param("roomId") Long roomId
+    );
+
     boolean existsByRoomIdAndParticipantId(Long roomId, Long participantId);
 
     @Modifying
@@ -45,6 +58,7 @@ public interface InTouchRoomGroupParticipantRepository
             @Param("roomId") Long roomId,
             @Param("groupId") Long groupId
     );
+
     @Modifying
     @Query("""
                 DELETE FROM InTouchRoomGroupParticipant gp

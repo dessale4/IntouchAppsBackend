@@ -14,7 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -517,5 +519,55 @@ public class InTouchRoomOwnerCommandService {
         roomRepository.save(room);
 
         progressPublisher.publishRoomProgress(roomId);
+    }
+    @Transactional
+    public void assignParticipantsEvenly(Long roomId) {
+        InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
+
+        accessValidator.ensureRoomOwnerOrAdmin(room);
+        lifecycleValidator.ensureEditableBeforeStart(room);
+
+        List<InTouchRoomGroup> groups =
+                groupRepository.findByRoomIdOrderBySortOrderAsc(roomId);
+
+        if (groups.isEmpty()) {
+            throw new IllegalStateException("Create at least one group first.");
+        }
+
+        List<InTouchRoomParticipant> participants =
+                participantRepository.findByRoomIdOrderByIdAsc(roomId);
+
+        if (participants.isEmpty()) {
+            throw new IllegalStateException("Create participants first.");
+        }
+
+        List<InTouchRoomParticipant> shuffledParticipants =
+                new ArrayList<>(participants);
+
+        Collections.shuffle(shuffledParticipants, new SecureRandom());
+
+        List<InTouchRoomGroupParticipant> existingAssignments =
+                groupParticipantRepository.findByRoomId(roomId);
+
+        groupParticipantRepository.deleteAll(existingAssignments);
+        groupParticipantRepository.flush();
+
+        List<InTouchRoomGroupParticipant> newAssignments = new ArrayList<>();
+
+        for (int i = 0; i < shuffledParticipants.size(); i++) {
+            InTouchRoomGroup group = groups.get(i % groups.size());
+            InTouchRoomParticipant participant = shuffledParticipants.get(i);
+
+            newAssignments.add(
+                    InTouchRoomGroupParticipant.builder()
+                            .room(room)
+                            .group(group)
+                            .participant(participant)
+                            .build()
+            );
+        }
+
+        groupParticipantRepository.saveAll(newAssignments);
     }
 }

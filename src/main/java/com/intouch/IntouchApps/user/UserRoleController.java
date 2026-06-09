@@ -18,7 +18,7 @@ public class UserRoleController {
     private final UserRoleService userRoleService;
 
     @PostMapping("/assign")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_LIVEROOM_MANAGER')")
     public ResponseEntity<Map<String, String>> assignRole(
             @Valid @RequestBody AssignRoleRequest assignRoleRequest
     ) {
@@ -28,7 +28,7 @@ public class UserRoleController {
     }
 
     @PutMapping("/remove")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_LIVEROOM_MANAGER')")
     public ResponseEntity<Map<String, String>> removeRole(
             @Valid @RequestBody RemoveRoleRequest removeRoleRequest
     ) {
@@ -38,7 +38,7 @@ public class UserRoleController {
     }
 
     @GetMapping("/users/{userId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_LIVEROOM_MANAGER')")
     public ResponseEntity<List<UserRoleResponse>> getActiveRolesByUser(@PathVariable Integer userId) {
         return ResponseEntity.ok(userRoleService.getActiveRolesByUser(userId));
     }

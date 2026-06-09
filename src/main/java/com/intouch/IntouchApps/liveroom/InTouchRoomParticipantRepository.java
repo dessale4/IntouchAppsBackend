@@ -20,6 +20,17 @@ public interface InTouchRoomParticipantRepository
             """)
     boolean existsActiveParticipantInActiveRoom(@Param("userId") Integer userId);
 
+    @Query("""
+                SELECT p
+                FROM InTouchRoomParticipant p
+                LEFT JOIN FETCH p.mobileUser u
+                WHERE p.room.id = :roomId
+                ORDER BY p.displayName ASC
+            """)
+    List<InTouchRoomParticipant> findByRoomIdWithMobileUser(
+            @Param("roomId") Long roomId
+    );
+
     @Modifying
     @Query("""
                 UPDATE InTouchRoomParticipant p
@@ -34,15 +45,15 @@ public interface InTouchRoomParticipantRepository
 
     @Modifying
     @Query("""
-    UPDATE InTouchRoomParticipant p
-    SET p.status = 'INVITED',
-        p.mobileUser = null,
-        p.activeInRoom = false,
-        p.claimedAt = null,
-        p.activatedAt = null,
-        p.completedAt = null
-    WHERE p.room.id = :roomId
-""")
+                UPDATE InTouchRoomParticipant p
+                SET p.status = 'INVITED',
+                    p.mobileUser = null,
+                    p.activeInRoom = false,
+                    p.claimedAt = null,
+                    p.activatedAt = null,
+                    p.completedAt = null
+                WHERE p.room.id = :roomId
+            """)
     void resetParticipantsAfterRoomReset(@Param("roomId") Long roomId);
 
     @Query("""
@@ -105,4 +116,13 @@ public interface InTouchRoomParticipantRepository
                 WHERE p.room.id = :roomId
             """)
     void deleteByRoomId(@Param("roomId") Long roomId);
+    @Query("""
+    SELECT p
+    FROM InTouchRoomParticipant p
+    WHERE p.room.id = :roomId
+    ORDER BY p.id ASC
+""")
+    List<InTouchRoomParticipant> findByRoomIdOrderByIdAsc(
+            @Param("roomId") Long roomId
+    );
 }

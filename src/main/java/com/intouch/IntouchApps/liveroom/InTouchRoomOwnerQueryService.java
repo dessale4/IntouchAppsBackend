@@ -1,6 +1,7 @@
 package com.intouch.IntouchApps.liveroom;
 
 import com.intouch.IntouchApps.liveroom.dto.response.*;
+import com.intouch.IntouchApps.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -354,6 +355,57 @@ public class InTouchRoomOwnerQueryService {
                 .groupName(group.getName())
                 .buildMode(room.getBuildMode())
                 .cells(cells)
+                .build();
+    }
+    @Transactional(readOnly = true)
+    public LiveRoomParticipantAccessResponse getParticipantAccess(Long roomId) {
+        InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
+
+        accessValidator.ensureRoomOwnerOrAdmin(room);
+
+        List<InTouchRoomParticipant> participants =
+                participantRepository.findByRoomIdWithMobileUser(roomId);
+
+        List<InTouchRoomGroupParticipant> assignments =
+                groupParticipantRepository.findAssignmentsForParticipantAccess(roomId);
+
+        Map<Long, InTouchRoomGroup> groupByParticipantId =
+                assignments.stream()
+                        .collect(Collectors.toMap(
+                                gp -> gp.getParticipant().getId(),
+                                InTouchRoomGroupParticipant::getGroup,
+                                (a, b) -> a
+                        ));
+
+        List<LiveRoomParticipantAccessRowResponse> rows =
+                participants.stream()
+                        .map(participant -> {
+                            InTouchRoomGroup group =
+                                    groupByParticipantId.get(participant.getId());
+
+                            User mobileUser = participant.getMobileUser();
+
+                            return LiveRoomParticipantAccessRowResponse.builder()
+                                    .participantId(participant.getId())
+                                    .participantDisplayName(participant.getDisplayName())
+                                    .participantCode(participant.getParticipantCode())
+                                    .status(participant.getStatus())
+                                    .groupId(group == null ? null : group.getId())
+                                    .groupName(group == null ? "Unassigned" : group.getName())
+                                    .mobileUserId(mobileUser == null ? null : mobileUser.getId())
+                                    .mobileUsername(mobileUser == null ? null : mobileUser.getUserName())
+                                    .claimedAt(participant.getClaimedAt())
+                                    .build();
+                        })
+                        .toList();
+
+        return LiveRoomParticipantAccessResponse.builder()
+                .roomId(room.getId())
+                .roomCode(room.getRoomCode())
+                .roomTitle(room.getTitle())
+                .roomStatus(room.getStatus())
+                .participants(rows)
                 .build();
     }
 }
