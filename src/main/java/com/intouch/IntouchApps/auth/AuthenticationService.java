@@ -66,6 +66,7 @@ public class AuthenticationService {
 
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRoleRepository userRoleRepository;
+    private final UserRoleService userRoleService;
     private final AgePolicyService agePolicyService;
     private final RequestMetadataContext requestMetadataContext;//request scoped bean
     @Value("${application.mailing.backend.email_validation_key}")
@@ -126,7 +127,6 @@ public class AuthenticationService {
         assignDefaultUserRole(user);
         sendEmail(user, validateEmail);
     }
-
     private void assignDefaultUserRole(User user) {
         Role userRole = roleRepository.findByName(RoleConstants.ROLE_USER)
                 .orElseThrow(() -> new RuntimeException("Something went wrong"));
@@ -251,6 +251,16 @@ public class AuthenticationService {
         }
         User user = savedVerificationToken.getUser();
         user.setEnabled(true);
+
+        int age = AgeUtil.calculateAge(user.getDateOfBirth());
+
+        if (age >= 18) {
+            userRoleService.assignRoleIfMissing(
+                    user,
+                    "ROLE_LIVEROOM_OWNER",
+                    "SYSTEM_EMAIL_VERIFICATION"
+            );
+        }
         savedVerificationToken.setUser(user);
         savedVerificationToken.setValidatedAt(AppDateUtil.getCurrentUtcInstant());
         tokenRepository.save(savedVerificationToken);

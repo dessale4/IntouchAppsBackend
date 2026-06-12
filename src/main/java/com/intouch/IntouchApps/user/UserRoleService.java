@@ -110,7 +110,29 @@ public class UserRoleService {
         userRole.setRemovedBy(currentUsername);
         userRole.setRemovedAt(Instant.now());
     }
+    @Transactional
+    public void assignRoleIfMissing(User user, String roleName, String assignedBy) {
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found: " + roleName));
 
+        boolean alreadyAssigned = userRoleRepository
+                .findByUserIdAndRoleIdAndActiveTrue(user.getId(), role.getId())
+                .isPresent();
+
+        if (alreadyAssigned) {
+            return;
+        }
+
+        UserRole userRole = UserRole.builder()
+                .user(user)
+                .role(role)
+                .assignedBy(assignedBy)
+                .assignedAt(Instant.now())
+                .active(true)
+                .build();
+
+        userRoleRepository.save(userRole);
+    }
     @Transactional(readOnly = true)
     public List<UserRoleResponse> getActiveRolesByUser(Integer userId) {
         List<UserRole> assignments = userRoleRepository.findByUserIdAndActiveTrue(userId);
