@@ -541,7 +541,11 @@ public class InTouchRoomOwnerCommandService {
         if (participants.isEmpty()) {
             throw new IllegalStateException("Create participants first.");
         }
-
+        if (groups.size() > participants.size()) {
+            throw new IllegalStateException(
+                    "Cannot assign evenly because there are more groups than participants. Add more participants or reduce the number of groups."
+            );
+        }
         List<InTouchRoomParticipant> shuffledParticipants =
                 new ArrayList<>(participants);
 
