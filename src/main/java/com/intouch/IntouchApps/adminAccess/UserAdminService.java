@@ -22,7 +22,8 @@ public class UserAdminService {
             String search,
             Pageable pageable
     ) {
-        return userRepository.searchUsersForAdmin(search, pageable)
+        String searchTerm = search.contains("@") ? standardPBEStringEncryptor.encrypt(search) : search;
+        return userRepository.searchUsersForAdmin(searchTerm, pageable)
                 .map(this::toAdminUserSummary);
     }
 

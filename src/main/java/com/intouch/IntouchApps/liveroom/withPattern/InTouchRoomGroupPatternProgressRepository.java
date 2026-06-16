@@ -22,4 +22,5 @@ public interface InTouchRoomGroupPatternProgressRepository
 """)
     void deleteByRoomId(@Param("roomId") Long roomId);
     long countByRoomIdAndGroupIdAndCompletedTrue(Long roomId, Long groupId);
+
 }

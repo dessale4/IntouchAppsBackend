@@ -2,29 +2,24 @@ package com.intouch.IntouchApps.liveroom.dto.response;
 
 import com.intouch.IntouchApps.liveroom.InTouchRoomStatus;
 import com.intouch.IntouchApps.liveroom.LiveRoomBuildMode;
-import com.intouch.IntouchApps.liveroom.ParticipantStatus;
 import lombok.*;
+
+import java.time.Instant;
 
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class MobileJoinRoomResponse {
-
+public class LiveRoomManagerRoomResponse {
     private Long roomId;
     private String roomTitle;
     private String roomCode;
-    private InTouchRoomStatus roomStatus;
-
-    private Long participantId;
-    private String participantDisplayName;
-    private String participantCode;
-    private ParticipantStatus participantStatus;
-
-    private Long groupId;
-    private String groupName;
+    private InTouchRoomStatus status;
     private LiveRoomBuildMode buildMode;
-    private Boolean canPlay;
     private Boolean paidRoom;
+    private Integer replayCount;
+    private String ownerUsername;
+    private Instant createdDate;
+    private Instant lastModifiedDate;
 }

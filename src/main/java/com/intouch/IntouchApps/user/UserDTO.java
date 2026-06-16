@@ -29,4 +29,5 @@ public class UserDTO {
     private String username;
     private Boolean paymentEnabled;
     private AgePolicyResponse agePolicy;
+    private UserAccessSummaryResponse userAccessSummaryResponse;
 }

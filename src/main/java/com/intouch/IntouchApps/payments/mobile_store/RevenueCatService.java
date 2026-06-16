@@ -4,7 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intouch.IntouchApps.auth.AuthenticationService;
+import com.intouch.IntouchApps.user.Subscription;
+import com.intouch.IntouchApps.user.SubscriptionService;
+import com.intouch.IntouchApps.user.User;
+import com.intouch.IntouchApps.user.UserRepository;
 import com.intouch.IntouchApps.utils.AppDateUtil;
+import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.transaction.annotation.Transactional;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +18,10 @@ import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -27,12 +36,54 @@ public class RevenueCatService {
     @Value("${application.payment.revenueCat.project_id}")
     private String projectId;
     private final EntitlementService entitlementService;
+    private final UserRepository userRepository;
+    private final StandardPBEStringEncryptor standardPBEStringEncryptor;
+    private final SubscriptionService subscriptionService;
     @Value("${application.payment.revenueCat.subscriptionUrl}")
     private String rcSubUrl;
     private String rcTransactionStatus;
 
     public boolean checkIfUserExists(String userIdentity) {
-        return authenticationService.doesUserExist(userIdentity);
+        User storedUser = doesUserExist(userIdentity);
+
+        List<Subscription> userCurrentActiveSubscriptions =
+                subscriptionService.getUserCurrentActiveSubscriptions(
+                        storedUser.getUserName()
+                );
+
+        if (userCurrentActiveSubscriptions != null &&
+                !userCurrentActiveSubscriptions.isEmpty()) {
+
+            Subscription subscription = userCurrentActiveSubscriptions.get(0);
+
+            if (subscription.getExpirationDate()
+                    .isAfter(Instant.now().plus(5, ChronoUnit.DAYS))) {
+                throw new IllegalStateException(
+                        userIdentity + " already has active access. Renewal will be available close to expiration."
+                );
+            }
+        }
+
+        return true;
+    }
+    private User doesUserExist(String userIdentity) {
+        String normalizedIdentity = userIdentity.trim().toLowerCase();
+
+        if (normalizedIdentity.contains("@")) {
+            return userRepository
+                    .findByEmail(
+                            standardPBEStringEncryptor.encrypt(normalizedIdentity)
+                    )
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Account not found with the provided information: " + userIdentity
+                    ));
+        }
+
+        return userRepository
+                .findByUserName(normalizedIdentity)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Account not found with the provided information: " + userIdentity
+                ));
     }
 
     public ResponseEntity<String> verifyPurchase(IAPRequest payload) throws JsonProcessingException {

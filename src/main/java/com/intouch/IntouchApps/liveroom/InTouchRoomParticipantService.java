@@ -53,6 +53,7 @@ public class InTouchRoomParticipantService {
         return MobileJoinRoomResponse.builder()
                 .roomId(participant.getRoom().getId())
                 .buildMode(participant.getRoom().getBuildMode())
+                .paidRoom(participant.getRoom().getPaidRoom())
                 .roomTitle(participant.getRoom().getTitle())
                 .roomCode(participant.getRoom().getRoomCode())
                 .roomStatus(participant.getRoom().getStatus())

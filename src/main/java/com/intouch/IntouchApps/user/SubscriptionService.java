@@ -51,4 +51,7 @@ public class SubscriptionService {
                 .map(s->s.getSubscriptionProductName())
                 .collect(Collectors.toSet());
     }
+    public List<Subscription> getUserCurrentActiveSubscriptions(String publicUserName){
+        return subscriptionRepository.findByOwnerPublicUserName(publicUserName);
+    }
 }

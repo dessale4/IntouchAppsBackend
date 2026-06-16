@@ -68,4 +68,11 @@ public class InTouchRoom extends BaseEntity {
     private Boolean scoringEnabled = false;
     private Instant startedAt;
     private Instant completedAt;
+    @Column(name = "paid_room", nullable = false)
+    @Builder.Default
+    private Boolean paidRoom = true;
+
+    @Column(name = "replay_count", nullable = false)
+    @Builder.Default
+    private Integer replayCount = 0;
 }

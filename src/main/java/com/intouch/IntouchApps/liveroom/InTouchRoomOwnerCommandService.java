@@ -515,7 +515,9 @@ public class InTouchRoomOwnerCommandService {
         room.setStatus(InTouchRoomStatus.DRAFT);
         room.setStartedAt(null);
         room.setCompletedAt(null);
-
+        room.setReplayCount(
+                room.getReplayCount() == null ? 1 : room.getReplayCount() + 1
+        );
         roomRepository.save(room);
 
         progressPublisher.publishRoomProgress(roomId);

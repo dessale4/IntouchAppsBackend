@@ -18,7 +18,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -55,27 +57,60 @@ public class AppUsersService {
     }
 
     public UserDTO loadLoggedUserByUserEmail(HttpServletRequest request) {
-//        String jwtToken = null;
-//        if (request.getCookies() != null) {
-//            jwtToken = Arrays.stream(request.getCookies())
-//                    .filter(c -> c.getName().equals("jwt"))
-//                    .findFirst()
-//                    .map(Cookie::getValue)
-//                    .orElse(null);
-//        }
-//        if(jwtToken == null){
-//            String authHeader = request.getHeader(AUTHORIZATION);
-//            if (authHeader != null && authHeader.startsWith("Bearer ")) {
-//                jwtToken = authHeader.substring(7);
-//            }
-//        }
-//        String userEmail = jwtService.extractUsername(jwtToken, false);
         String userEmail = securityUtils.getCurrentUserEmail();
         String decryptedEmail = standardPBEStringEncryptor.decrypt(userEmail);
         User user = userRepository.findByEmailWithActiveRoles(userEmail).orElseThrow(() -> new UsernameNotFoundException("No user was found with email: " + decryptedEmail));
-//        boolean subscriptionIsExpired = user.getSubscriptionEndDate() !=null && AppDateUtil.getCurrentUTCLocalDateTime().isAfter(user.getSubscriptionEndDate());
+
         Set<String> commonAppAccess = Set.of(UserAndRolesUtil.subscriptionMap().get(commonSubKey));
         AgePolicyResponse agePolicy = user.getDateOfBirth() !=null ?  agePolicyService.evaluate(user.getDateOfBirth()) : null;
+        boolean adminSetUser =
+                UserAndRolesUtil.adminSetEmails.contains(
+                        standardPBEStringEncryptor.decrypt(user.getEmail())
+                );
+
+        List<Subscription> userCurrentActiveSubscriptions =
+                subscriptionService.getUserCurrentActiveSubscriptions(
+                        user.getUserName()
+                );
+
+        boolean hasBasicAccess;
+        boolean eligibleForRenewal;
+        Instant accessExpiresAt;
+
+        if (adminSetUser) {
+
+            hasBasicAccess = true;
+            eligibleForRenewal = true;
+            accessExpiresAt = Instant.now().plus(10, ChronoUnit.DAYS);
+
+        } else if (userCurrentActiveSubscriptions == null ||
+                userCurrentActiveSubscriptions.isEmpty()) {
+
+            hasBasicAccess = false;
+            eligibleForRenewal = true;
+            accessExpiresAt = Instant.now();
+
+        } else {
+
+            Subscription subscription = userCurrentActiveSubscriptions.get(0);
+
+            accessExpiresAt = subscription.getExpirationDate();
+
+            hasBasicAccess = accessExpiresAt.isAfter(Instant.now());
+
+            eligibleForRenewal =
+                    !hasBasicAccess ||
+                            accessExpiresAt.isBefore(
+                                    Instant.now().plus(5, ChronoUnit.DAYS)
+                            );
+        }
+
+        UserAccessSummaryResponse userAccessSummaryResponse =
+                UserAccessSummaryResponse.builder()
+                        .accessExpiresAt(accessExpiresAt)
+                        .hasBasicAccess(hasBasicAccess)
+                        .eligibleForRenewal(eligibleForRenewal)
+                        .build();
         return UserDTO.builder()
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
@@ -87,11 +122,12 @@ public class AppUsersService {
 //                .isSubscribed(subscriptionIsExpired ? false: user.isSubscribed())
                 .accountLocked(user.isAccountLocked())
                 .roles(user.getUserRoles().stream().map(r -> r.getRole().getName()).collect(Collectors.toSet()))
-                .appAccesses(UserAndRolesUtil.adminSetEmails.contains(standardPBEStringEncryptor.decrypt(user.getEmail())) ? commonAppAccess : subscriptionService.getUserActiveSubscriptions(user.getUserName()))
+                .appAccesses(adminSetUser ? commonAppAccess : subscriptionService.getUserActiveSubscriptions(user.getUserName()))
 //                .subscriptionEndDate(user.getSubscriptionEndDate())
 //                .paymentEnabled(isAppPaymentEnabled)//can be used if Config Server is enabled
                 .paymentEnabled(Boolean.parseBoolean((String) runtimeConfigService.getProperty(ConstantsUtil.APPLICATION_PAYMENT_ENABLED_PROP)))
                 .agePolicy(agePolicy)
+                .userAccessSummaryResponse(userAccessSummaryResponse)
                 .build();
     }
 

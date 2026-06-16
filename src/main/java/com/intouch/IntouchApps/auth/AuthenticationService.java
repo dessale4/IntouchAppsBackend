@@ -480,15 +480,6 @@ public class AuthenticationService {
         return refreshToken;
     }
 
-    public boolean doesUserExist(String userIdentity) {
-        User storedUser;
-        if (userIdentity.contains("@")) {
-            storedUser = userRepository.findByEmail(standardPBEStringEncryptor.encrypt(userIdentity.toLowerCase())).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
-        } else {
-            storedUser = userRepository.findByUserName(userIdentity.toLowerCase()).orElseThrow(() -> new RuntimeException("Account not found with the provided information=> " + userIdentity));
-        }
-        return storedUser == null ? false : true;
-    }
 
     public User existingAppUser(String userIdentity) {
         User storedUser;
