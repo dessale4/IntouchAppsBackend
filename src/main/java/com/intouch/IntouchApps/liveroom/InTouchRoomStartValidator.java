@@ -44,14 +44,6 @@ public class InTouchRoomStartValidator {
             throw new IllegalStateException("Room must have at least one active live key.");
         }
 
-//        long assignedParticipantCount =
-//                groupParticipantRepository.countDistinctAssignedParticipantsByRoomId(roomId);
-//
-//        if (assignedParticipantCount != participantCount) {
-//            throw new IllegalStateException(
-//                    "Every participant must be assigned to exactly one group before starting."
-//            );
-//        }
         long activeParticipantCount =
                 participantRepository.countByRoomIdAndStatusNot(
                         roomId,

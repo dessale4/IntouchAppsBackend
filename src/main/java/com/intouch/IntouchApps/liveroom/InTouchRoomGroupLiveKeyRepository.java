@@ -56,7 +56,13 @@ public interface InTouchRoomGroupLiveKeyRepository
             Long roomId,
             Integer mobileUserId
     );
-
+    Optional<InTouchRoomGroupLiveKey>
+    findFirstByRoom_IdAndGroup_IdAndAssignedParticipant_IdAndStatusOrderByAssignedOrderAsc(
+            Long roomId,
+            Long groupId,
+            Long participantId,
+            LiveKeyBuildStatus status
+    );
     @Query("""
                 SELECT k
                 FROM InTouchRoomGroupLiveKey k

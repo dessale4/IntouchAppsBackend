@@ -3,6 +3,7 @@ import com.intouch.IntouchApps.liveroom.LiveRoomBuildMode;
 import lombok.*;
 
 import java.time.Instant;
+import java.util.List;
 
 @Builder
 @Getter
@@ -26,5 +27,5 @@ public class InTouchRoomGroupProgressDto {
     private String roomCode;
     private String roomTitle;
     private LiveRoomBuildMode buildMode;
-
+    private List<CurrentParticipantKeyDto> currentParticipantKeys;
 }

@@ -106,4 +106,8 @@ public interface InTouchRoomGroupParticipantRepository
             @Param("roomId") Long roomId,
             @Param("groupId") Long groupId
     );
+    List<InTouchRoomGroupParticipant> findByRoomIdAndGroupId(
+            Long roomId,
+            Long groupId
+    );
 }
