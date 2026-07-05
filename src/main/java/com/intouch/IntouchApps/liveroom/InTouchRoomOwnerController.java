@@ -187,4 +187,12 @@ public class InTouchRoomOwnerController {
         ownerCommandService.assignParticipantsEvenly(roomId);
         return ResponseEntity.ok().build();
     }
+    @PatchMapping("/{roomId}/participants/{participantId}/release-claim")
+    public ResponseEntity<Void> releaseParticipantClaim(
+            @PathVariable Long roomId,
+            @PathVariable Long participantId
+    ) {
+        ownerCommandService.releaseParticipantClaim(roomId, participantId);
+        return ResponseEntity.noContent().build();
+    }
 }

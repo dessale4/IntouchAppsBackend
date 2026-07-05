@@ -41,6 +41,7 @@ public class InTouchRoomOwnerCommandService {
     private final InTouchRoomBoardPatternCellRepository boardPatternCellRepository;
     private final InTouchRoomGroupPatternProgressRepository groupPatternProgressRepository;
     private final InTouchRoomBoardPatternRepository boardPatternRepository;
+
     @Transactional
     public InTouchRoom createRoom(CreateRoomRequest request) {
         Integer currentUserId = securityUtils.getCurrentUserId();
@@ -300,6 +301,7 @@ public class InTouchRoomOwnerCommandService {
             }
         }
     }
+
     @Transactional
     public void cancelRoom(Long roomId) {
         InTouchRoom room = roomRepository.findById(roomId)
@@ -336,6 +338,7 @@ public class InTouchRoomOwnerCommandService {
 
         roomRepository.delete(room);
     }
+
     @Transactional
     public void pauseRoom(Long roomId) {
         InTouchRoom room = roomRepository.findById(roomId)
@@ -349,6 +352,7 @@ public class InTouchRoomOwnerCommandService {
 
         progressPublisher.publishRoomProgress(roomId);
     }
+
     @Transactional
     public void resumeRoom(Long roomId) {
         InTouchRoom room = roomRepository.findById(roomId)
@@ -363,6 +367,7 @@ public class InTouchRoomOwnerCommandService {
 
         progressPublisher.publishRoomProgress(roomId);
     }
+
     @Transactional
     public void createTemplate(
             Long roomId,
@@ -497,6 +502,7 @@ public class InTouchRoomOwnerCommandService {
         groupParticipantRepository.deleteByRoomIdAndGroupId(roomId, groupId);
         groupRepository.delete(group);
     }
+
     @Transactional
     public void resetRoom(Long roomId) {
         InTouchRoom room = roomRepository.findById(roomId)
@@ -522,6 +528,7 @@ public class InTouchRoomOwnerCommandService {
 
         progressPublisher.publishRoomProgress(roomId);
     }
+
     @Transactional
     public void assignParticipantsEvenly(Long roomId) {
         InTouchRoom room = roomRepository.findById(roomId)
@@ -575,5 +582,26 @@ public class InTouchRoomOwnerCommandService {
         }
 
         groupParticipantRepository.saveAll(newAssignments);
+    }
+
+    @Transactional
+    public void releaseParticipantClaim(Long roomId, Long participantId) {
+ InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found"));
+
+        accessValidator.ensureRoomOwner(room);
+
+        InTouchRoomParticipant participant =
+                participantRepository.findByIdAndRoomId(participantId, roomId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("Participant not found")
+                        );
+        lifecycleValidator.ensureCanReleaseParticipantClaim(room, participant);
+
+        participant.setMobileUser(null);
+        participant.setClaimedAt(null);
+        participant.setStatus(ParticipantStatus.INVITED);
+        participantRepository.save(participant);
+        progressPublisher.publishRoomProgress(room.getId());
     }
 }

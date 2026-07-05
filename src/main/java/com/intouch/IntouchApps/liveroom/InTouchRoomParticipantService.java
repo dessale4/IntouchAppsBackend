@@ -24,14 +24,30 @@ public class InTouchRoomParticipantService {
     @Transactional
     public MobileJoinRoomResponse joinRoom(String roomCode, String participantCode) {
         Integer currentUserId = securityUtils.getCurrentUserId();
+
         InTouchRoomParticipant participant =
                 participantRepository
                         .findByRoomCodeAndParticipantCode(roomCode, participantCode)
                         .orElseThrow(() -> new IllegalArgumentException(
                                 "Invalid room code or participant code"
                         ));
-        validator.ensureUserCanJoin(currentUserId, participant.getRoom().getId());
 
+        validator.ensureUserCanJoin(currentUserId, participant.getRoom().getId());
+        boolean alreadyJoinedThisRoom =
+                participantRepository.existsByRoomIdAndMobileUserIdAndClaimedAtIsNotNull(
+                        participant.getRoom().getId(),
+                        currentUserId
+                );
+
+        boolean sameParticipant =
+                participant.getMobileUser() != null
+                        && participant.getMobileUser().getId().equals(currentUserId);
+
+        if (alreadyJoinedThisRoom && !sameParticipant) {
+            throw new IllegalStateException(
+                    "You already joined this room with another participant code. Please use your previous participant code."
+            );
+        }
         validator.ensureSlotClaimable(participant, currentUserId);
 
         if (participant.getMobileUser() == null) {

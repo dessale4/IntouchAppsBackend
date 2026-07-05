@@ -125,4 +125,9 @@ public interface InTouchRoomParticipantRepository
     List<InTouchRoomParticipant> findByRoomIdOrderByIdAsc(
             @Param("roomId") Long roomId
     );
+    boolean existsByRoomIdAndMobileUserIdAndClaimedAtIsNotNull(
+            Long roomId,
+            Integer mobileUserId
+    );
+    Optional<InTouchRoomParticipant> findByIdAndRoomId(Long id, Long roomId);
 }

@@ -96,4 +96,26 @@ public class InTouchRoomLifecycleValidator {
             throw new IllegalStateException("Room is not started yet.");
         }
     }
+    public void ensureCanReleaseParticipantClaim(
+            InTouchRoom room,
+            InTouchRoomParticipant participant
+    ) {
+        if (room.getStatus() == InTouchRoomStatus.STARTED) {
+            throw new IllegalStateException(
+                    "Participant claims cannot be released after the room has started."
+            );
+        }
+
+        if (room.getStatus() == InTouchRoomStatus.COMPLETED) {
+            throw new IllegalStateException(
+                    "Reset the room before releasing participant claims."
+            );
+        }
+
+        if (participant.getMobileUser() == null) {
+            throw new IllegalStateException(
+                    "Participant is not currently claimed."
+            );
+        }
+    }
 }
