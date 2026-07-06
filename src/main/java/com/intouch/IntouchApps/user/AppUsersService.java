@@ -1,6 +1,8 @@
 package com.intouch.IntouchApps.user;
 
 import com.intouch.IntouchApps.adminAccess.RuntimeConfigService;
+import com.intouch.IntouchApps.common.MobileVersionControlResponse;
+import com.intouch.IntouchApps.config.RequestMetadataContext;
 import com.intouch.IntouchApps.security.JwtService;
 import com.intouch.IntouchApps.security.SecurityUtils;
 import com.intouch.IntouchApps.utils.AppDateUtil;
@@ -25,6 +27,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.intouch.IntouchApps.constants.ClientType.MOBILE_CLIENT;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -42,8 +46,20 @@ public class AppUsersService {
     private final RuntimeConfigService runtimeConfigService;
     private final UserRoleRepository userRoleRepository;
     private final AgePolicyService agePolicyService;
+    private final RequestMetadataContext requestMetadataContext;//request scoped bean
+
     @Value("${application.payment.enabled}")
     private Boolean isAppPaymentEnabled;
+    @Value("${application.intouch.mobile.latest-version}")
+    private String mobileLatestVersion;
+    @Value("${application.intouch.mobile.minimum-supported-version}")
+    private String mobileMinimumSupportedVersion;
+    @Value("${application.intouch.mobile.update-message}")
+    private String mobileUpdateMessage;
+    @Value("${application.intouch.mobile.android-url}")
+    private String mobileAndroidUrl;
+    @Value("${application.intouch.mobile.ios-url}")
+    private String mobileIosUrl;
     public List<AccountDTO> getAppUsernames() {
         return userRepository.findAll().stream()
                 .map((u -> mapUserToAccountDTO(u)))
@@ -57,10 +73,11 @@ public class AppUsersService {
     }
 
     public UserDTO loadLoggedUserByUserEmail(HttpServletRequest request) {
+        String requestClientType = requestMetadataContext.getClientType();
         String userEmail = securityUtils.getCurrentUserEmail();
         String decryptedEmail = standardPBEStringEncryptor.decrypt(userEmail);
         User user = userRepository.findByEmailWithActiveRoles(userEmail).orElseThrow(() -> new UsernameNotFoundException("No user was found with email: " + decryptedEmail));
-
+        boolean isMobileClient = requestClientType.equals(MOBILE_CLIENT);
         Set<String> commonAppAccess = Set.of(UserAndRolesUtil.subscriptionMap().get(commonSubKey));
         AgePolicyResponse agePolicy = user.getDateOfBirth() !=null ?  agePolicyService.evaluate(user.getDateOfBirth()) : null;
         boolean adminSetUser =
@@ -111,6 +128,14 @@ public class AppUsersService {
                         .hasBasicAccess(hasBasicAccess)
                         .eligibleForRenewal(eligibleForRenewal)
                         .build();
+        MobileVersionControlResponse mobileVersionControlResponse = MobileVersionControlResponse.builder().build();
+        if (isMobileClient){
+            mobileVersionControlResponse.setLatestVersion(mobileLatestVersion);
+            mobileVersionControlResponse.setMinimumSupportedVersion(mobileMinimumSupportedVersion);
+            mobileVersionControlResponse.setUpdateMessage(mobileUpdateMessage);
+            mobileVersionControlResponse.setAndroidUrl(mobileAndroidUrl);
+            mobileVersionControlResponse.setIosUrl(mobileIosUrl);
+        }
         return UserDTO.builder()
                 .firstName(user.getFirstName())
                 .lastName(user.getLastName())
@@ -128,6 +153,7 @@ public class AppUsersService {
                 .paymentEnabled(Boolean.parseBoolean((String) runtimeConfigService.getProperty(ConstantsUtil.APPLICATION_PAYMENT_ENABLED_PROP)))
                 .agePolicy(agePolicy)
                 .userAccessSummaryResponse(userAccessSummaryResponse)
+                .mobileVersionControlResponse(mobileVersionControlResponse)
                 .build();
     }
 

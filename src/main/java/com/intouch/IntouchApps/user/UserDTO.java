@@ -1,5 +1,6 @@
 package com.intouch.IntouchApps.user;
 
+import com.intouch.IntouchApps.common.MobileVersionControlResponse;
 import com.intouch.IntouchApps.role.Role;
 import lombok.*;
 
@@ -30,4 +31,5 @@ public class UserDTO {
     private Boolean paymentEnabled;
     private AgePolicyResponse agePolicy;
     private UserAccessSummaryResponse userAccessSummaryResponse;
+    private MobileVersionControlResponse mobileVersionControlResponse;
 }
