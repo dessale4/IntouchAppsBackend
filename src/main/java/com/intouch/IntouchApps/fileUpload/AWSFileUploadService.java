@@ -118,43 +118,36 @@ public class AWSFileUploadService {
 
         String awsFileName = originalFileName.trim();
 
-        KeyAudio existingAudio = storedAppKey.getKeyAudios()
+        KeyAudio matchingExistingAudio = storedAppKey.getKeyAudios()
                 .stream()
                 .filter(audio ->
                         audio.getKeyAudioFileName() != null &&
-                                audio.getKeyAudioFileName().equalsIgnoreCase(awsFileName)
+                                audio.getKeyAudioFileName()
+                                        .equalsIgnoreCase(awsFileName)
                 )
                 .findFirst()
                 .orElse(null);
 
-        if (existingAudio != null) {
-            storedAppKey.getKeyAudios().remove(existingAudio);
-            if (existingAudio.getKeyAudioUrl() != null) {
-                deleteFileFromAWSS3Bucket(existingAudio.getKeyAudioUrl());
-            }
-        }
-
-        KeyAudio existingDefaultKeyAudio = storedAppKey.getKeyAudios()
+        KeyAudio existingDefaultAudio = storedAppKey.getKeyAudios()
                 .stream()
                 .filter(KeyAudio::isDefault)
                 .max(Comparator.comparing(KeyAudio::getId))
                 .orElse(null);
 
-        /*
-         * Keep at least one default audio:
-         * - explicit true always becomes default
-         * - if no default exists, the first uploaded audio becomes default
-         */
-        boolean makeNewAudioDefault =
-                requestedAsDefault
-                        || existingDefaultKeyAudio == null
-                        || (existingAudio != null && existingAudio.isDefault());
+        boolean replacingCurrentDefault =
+                matchingExistingAudio != null &&
+                        matchingExistingAudio.isDefault();
+
+        boolean makeUploadedAudioDefault =
+                requestedAsDefault ||
+                        replacingCurrentDefault ||
+                        existingDefaultAudio == null;
 
         try {
             String contentType = file.getContentType();
 
             if (contentType == null || contentType.isBlank()) {
-                contentType = "audio/mpeg";
+                contentType = "audio/mp4";
             }
 
             String awsS3FileUrl = saveFileToAWSS3Bucket(
@@ -163,22 +156,31 @@ public class AWSFileUploadService {
                     folderName
             );
 
-            if (makeNewAudioDefault) {
+            if (makeUploadedAudioDefault) {
                 storedAppKey.getKeyAudios()
                         .stream()
                         .filter(KeyAudio::isDefault)
                         .forEach(audio -> audio.setDefault(false));
             }
 
-            KeyAudio keyAudio = KeyAudio.builder()
-                    .keyAudioUrl(awsS3FileUrl)
-                    .keyId(keyId)
-                    .keyFamilyId(keyFamilyId)
-                    .keyAudioFileName(awsFileName)
-                    .isDefault(makeNewAudioDefault)
-                    .build();
+            if (matchingExistingAudio != null) {
+                // Update the existing database record instead of inserting.
+                matchingExistingAudio.setKeyAudioUrl(awsS3FileUrl);
+                matchingExistingAudio.setKeyFamilyId(keyFamilyId);
+                matchingExistingAudio.setKeyId(keyId);
+                matchingExistingAudio.setKeyAudioFileName(awsFileName);
+                matchingExistingAudio.setDefault(makeUploadedAudioDefault);
+            } else {
+                KeyAudio newAudio = KeyAudio.builder()
+                        .keyAudioUrl(awsS3FileUrl)
+                        .keyId(keyId)
+                        .keyFamilyId(keyFamilyId)
+                        .keyAudioFileName(awsFileName)
+                        .isDefault(makeUploadedAudioDefault)
+                        .build();
 
-            storedAppKey.addKeyAudio(keyAudio);
+                storedAppKey.addKeyAudio(newAudio);
+            }
 
             return appKeyRepository.save(storedAppKey);
 
