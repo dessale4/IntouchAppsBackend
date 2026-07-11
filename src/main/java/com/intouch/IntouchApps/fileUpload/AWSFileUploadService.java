@@ -21,6 +21,7 @@ import software.amazon.awssdk.utils.IoUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.Comparator;
 import java.util.Optional;
 
@@ -117,18 +118,20 @@ public class AWSFileUploadService {
 
         String awsFileName = originalFileName.trim();
 
-        boolean audioExists = storedAppKey.getKeyAudios()
+        KeyAudio existingAudio = storedAppKey.getKeyAudios()
                 .stream()
-                .anyMatch(audio ->
+                .filter(audio ->
                         audio.getKeyAudioFileName() != null &&
-                                audio.getKeyAudioFileName()
-                                        .equalsIgnoreCase(awsFileName)
-                );
+                                audio.getKeyAudioFileName().equalsIgnoreCase(awsFileName)
+                )
+                .findFirst()
+                .orElse(null);
 
-        if (audioExists) {
-            throw new IllegalStateException(
-                    "Key audio already exists with file name: " + awsFileName
-            );
+        if (existingAudio != null) {
+            storedAppKey.getKeyAudios().remove(existingAudio);
+            if (existingAudio.getKeyAudioUrl() != null) {
+                deleteFileFromAWSS3Bucket(existingAudio.getKeyAudioUrl());
+            }
         }
 
         KeyAudio existingDefaultKeyAudio = storedAppKey.getKeyAudios()
@@ -143,7 +146,9 @@ public class AWSFileUploadService {
          * - if no default exists, the first uploaded audio becomes default
          */
         boolean makeNewAudioDefault =
-                requestedAsDefault || existingDefaultKeyAudio == null;
+                requestedAsDefault
+                        || existingDefaultKeyAudio == null
+                        || (existingAudio != null && existingAudio.isDefault());
 
         try {
             String contentType = file.getContentType();
@@ -180,6 +185,33 @@ public class AWSFileUploadService {
         } catch (Exception exception) {
             throw new RuntimeException(
                     "Unable to upload key audio: " + exception.getMessage(),
+                    exception
+            );
+        }
+    }
+    private void deleteFileFromAWSS3Bucket(String fileUrl) {
+        if (fileUrl == null || fileUrl.isBlank()) {
+            return;
+        }
+
+        try {
+            URI uri = URI.create(fileUrl);
+
+            // Remove the leading "/"
+            String objectKey = uri.getPath().startsWith("/")
+                    ? uri.getPath().substring(1)
+                    : uri.getPath();
+
+            DeleteObjectRequest deleteRequest = DeleteObjectRequest.builder()
+                    .bucket(awsS3BucketName)
+                    .key(objectKey)
+                    .build();
+
+            s3Client.deleteObject(deleteRequest);
+
+        } catch (Exception exception) {
+            throw new RuntimeException(
+                    "Unable to delete existing S3 object: " + fileUrl,
                     exception
             );
         }
