@@ -21,6 +21,7 @@ import software.amazon.awssdk.utils.IoUtils;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Comparator;
 import java.util.Optional;
 
 @Service
@@ -90,42 +91,98 @@ public class AWSFileUploadService {
         }
         return storedKeyExample;
     }
-    @CacheEvict(cacheNames = "defaultKeyFamilies", key = "'defaultKeyFamilies'")
-    public AppKey uploadKeyAudio(MultipartFile file, Integer keyFamilyId, Integer keyId, String folderName) {
-        AppKey storedAppKey = appKeyRepository.findAppKeyByKeyFamilyIdAndKeyId(keyFamilyId, keyId).orElseThrow(() -> new RuntimeException("AppKey not found"));
-        String awsFileName = file.getOriginalFilename();
+    @Transactional
+    @CacheEvict(
+            cacheNames = "defaultKeyFamilies",
+            key = "'defaultKeyFamilies'"
+    )
+    public AppKey uploadKeyAudio(
+            MultipartFile file,
+            Integer keyFamilyId,
+            Integer keyId,
+            String folderName,
+            boolean requestedAsDefault
+    ) {
+        AppKey storedAppKey = appKeyRepository
+                .findAppKeyByKeyFamilyIdAndKeyId(keyFamilyId, keyId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("AppKey not found.")
+                );
+
+        String originalFileName = file.getOriginalFilename();
+
+        if (originalFileName == null || originalFileName.isBlank()) {
+            throw new IllegalArgumentException("Audio file name is required.");
+        }
+
+        String awsFileName = originalFileName.trim();
+
         boolean audioExists = storedAppKey.getKeyAudios()
                 .stream()
-                .filter(au -> au.getKeyAudioFileName().equals(awsFileName))
-                .findFirst()
-                .isPresent();
-        if(audioExists){
-            throw new RuntimeException("Table already has Key Audio with name: " + awsFileName);
+                .anyMatch(audio ->
+                        audio.getKeyAudioFileName() != null &&
+                                audio.getKeyAudioFileName()
+                                        .equalsIgnoreCase(awsFileName)
+                );
+
+        if (audioExists) {
+            throw new IllegalStateException(
+                    "Key audio already exists with file name: " + awsFileName
+            );
         }
+
+        KeyAudio existingDefaultKeyAudio = storedAppKey.getKeyAudios()
+                .stream()
+                .filter(KeyAudio::isDefault)
+                .max(Comparator.comparing(KeyAudio::getId))
+                .orElse(null);
+
+        /*
+         * Keep at least one default audio:
+         * - explicit true always becomes default
+         * - if no default exists, the first uploaded audio becomes default
+         */
+        boolean makeNewAudioDefault =
+                requestedAsDefault || existingDefaultKeyAudio == null;
+
         try {
-            String awsS3FileURl = saveFileToAWSS3Bucket(file, "video/mp4", folderName);
-            Optional<KeyAudio> existingDefaultKeyAudio = storedAppKey.getKeyAudios().stream().filter(a -> a.isDefault()).findFirst();
+            String contentType = file.getContentType();
+
+            if (contentType == null || contentType.isBlank()) {
+                contentType = "audio/mpeg";
+            }
+
+            String awsS3FileUrl = saveFileToAWSS3Bucket(
+                    file,
+                    contentType,
+                    folderName
+            );
+
+            if (makeNewAudioDefault) {
+                storedAppKey.getKeyAudios()
+                        .stream()
+                        .filter(KeyAudio::isDefault)
+                        .forEach(audio -> audio.setDefault(false));
+            }
+
             KeyAudio keyAudio = KeyAudio.builder()
-                    .keyAudioUrl(awsS3FileURl)
+                    .keyAudioUrl(awsS3FileUrl)
                     .keyId(keyId)
                     .keyFamilyId(keyFamilyId)
                     .keyAudioFileName(awsFileName)
-                    .isDefault(existingDefaultKeyAudio.isPresent() ? false : true)
+                    .isDefault(makeNewAudioDefault)
                     .build();
+
             storedAppKey.addKeyAudio(keyAudio);
-            if(keyAudio.isDefault() && existingDefaultKeyAudio.isPresent()){
-                KeyAudio keyAudioToUpdate = existingDefaultKeyAudio.get();
-                keyAudioToUpdate.setDefault(false);
-                storedAppKey.addKeyAudio(keyAudioToUpdate);//will update the existing keyAudio
-//                storedAppKey.setDefaultKeyAudio(keyAudio);
 
-            }
-            storedAppKey = appKeyRepository.save(storedAppKey);
+            return appKeyRepository.save(storedAppKey);
 
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+        } catch (Exception exception) {
+            throw new RuntimeException(
+                    "Unable to upload key audio: " + exception.getMessage(),
+                    exception
+            );
         }
-        return storedAppKey;
     }
     private String saveFileToAWSS3Bucket(MultipartFile file, String contentType, String folderName ) throws IOException, AWSFileUploadException {
         String fileName = file.getOriginalFilename();

@@ -5,6 +5,8 @@ import com.intouch.IntouchApps.appkeys.KeyExample;
 import com.intouch.IntouchApps.appkeys.KeyFamilyResponse;
 import com.intouch.IntouchApps.appkeys.dtos.KeyFamilyDefaultDTO;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -21,17 +23,34 @@ public class AWSFileUploadController {
 
         return awsFileUploadService.uploadKeyFamilyAudio(file, keyFamilyId, folderName);
     }
-    @PostMapping("/keyAudio")
+    @PostMapping(
+            value = "/keyAudio",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
-    public String keyAudioFileUpload(@RequestBody MultipartFile file, @RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("keyId") Integer keyId, @RequestParam("folderName") String folderName) {
-        if (file.isEmpty()) {
-            return "Please select a file to upload.";
+    public ResponseEntity<String> keyAudioFileUpload(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam("keyFamilyId") Integer keyFamilyId,
+            @RequestParam("keyId") Integer keyId,
+            @RequestParam("folderName") String folderName,
+            @RequestParam(value = "isDefault", defaultValue = "false")
+            boolean isDefault
+    ) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("Please select an audio file.");
         }
-        String message = "File uploaded successfully: ";
 
-        AppKey AppKey = awsFileUploadService.uploadKeyAudio(file, keyFamilyId, keyId, folderName);
+        awsFileUploadService.uploadKeyAudio(
+                file,
+                keyFamilyId,
+                keyId,
+                folderName,
+                isDefault
+        );
 
-        return message;
+        return ResponseEntity.ok(
+                "Key audio uploaded successfully."
+        );
     }
     @PostMapping("/keyExampleImage")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
