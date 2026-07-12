@@ -19,9 +19,13 @@ public class AWSFileUploadController {
 
     @PostMapping("/keyFamilyAudio")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN', 'ROLE_MANAGER')")
-    public KeyFamilyDefaultDTO uploadKeyFamilyAudio(@RequestParam("file") MultipartFile file, @RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("folderName") String folderName) {
+    public KeyFamilyDefaultDTO uploadKeyFamilyAudio(@RequestParam("file") MultipartFile file, @RequestParam("keyFamilyId") Integer keyFamilyId, @RequestParam("folderName") String folderName, @RequestParam(
+            value = "isDefault",
+            defaultValue = "false"
+    )
+    boolean isDefault) {
 
-        return awsFileUploadService.uploadKeyFamilyAudio(file, keyFamilyId, folderName);
+        return awsFileUploadService.uploadKeyFamilyAudio(file, keyFamilyId, folderName, isDefault);
     }
     @PostMapping(
             value = "/keyAudio",
