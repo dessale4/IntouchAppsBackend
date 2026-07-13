@@ -106,8 +106,8 @@ application:
   webSocketAllowedOrigins: '${HTTPS_WEB_ORIGIN:https://intouchup.com}, ${WWW_WEB_ORIGIN:https://www.intouchup.com}'
   intouch:
     mobile:
-      latest-version: "1.1.13"
-      minimum-supported-version: "1.1.13"
+      latest-version: '${MOBILE_APP_LATEST_VERSION:1.1.15}'
+      minimum-supported-version: '${MOBILE_APP_MINIMUM_SUPPORTED_VERSION:1.1.15}'
       update-message: "A new version of Intouch Board is available. Please update to continue."
       android-url: "https://play.google.com/store/apps/details?id=com.intouchup.HeLeHeBoard"
       ios-url: "https://apps.apple.com/app/com.intouchup.HeLeHeBoard"
