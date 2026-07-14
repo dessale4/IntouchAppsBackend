@@ -32,4 +32,5 @@ public class UserDTO {
     private AgePolicyResponse agePolicy;
     private UserAccessSummaryResponse userAccessSummaryResponse;
     private MobileVersionControlResponse mobileVersionControlResponse;
+    private boolean storeReviewAccount;
 }

@@ -60,6 +60,8 @@ public class AppUsersService {
     private String mobileAndroidUrl;
     @Value("${application.intouch.mobile.ios-url}")
     private String mobileIosUrl;
+    @Value("${application.mobileStore.emails}")
+    private List<String> mobileStoreReviewerEmails;
     public List<AccountDTO> getAppUsernames() {
         return userRepository.findAll().stream()
                 .map((u -> mapUserToAccountDTO(u)))
@@ -136,8 +138,10 @@ public class AppUsersService {
             mobileVersionControlResponse.setAndroidUrl(mobileAndroidUrl);
             mobileVersionControlResponse.setIosUrl(mobileIosUrl);
         }
+        System.out.println("mobileStoreReviewerEmails => " + mobileStoreReviewerEmails);
         return UserDTO.builder()
                 .firstName(user.getFirstName())
+                .storeReviewAccount(mobileStoreReviewerEmails.contains(decryptedEmail))
                 .lastName(user.getLastName())
                 .email(decryptedEmail)
                 .username(user.getUserName())
