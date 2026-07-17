@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -603,5 +604,53 @@ public class InTouchRoomOwnerCommandService {
         participant.setStatus(ParticipantStatus.INVITED);
         participantRepository.save(participant);
         progressPublisher.publishRoomProgress(room.getId());
+    }
+
+    @Transactional
+    public void reactivateParticipant(Long roomId, Long participantId) {
+        InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
+        accessValidator.ensureRoomOwner(room);
+
+        if (Boolean.TRUE.equals(room.getDeleted()) ||
+                room.getStatus() == InTouchRoomStatus.COMPLETED ||
+                room.getStatus() == InTouchRoomStatus.CANCELLED ||
+                room.getStatus() == InTouchRoomStatus.DELETED) {
+            throw new IllegalStateException("Participant cannot be reactivated in this room.");
+        }
+
+        InTouchRoomParticipant participant =
+                participantRepository.findByIdAndRoomId(participantId, roomId)
+                        .orElseThrow(() -> new IllegalArgumentException("Participant not found."));
+
+        if (participant.getStatus() != ParticipantStatus.LEFT) {
+            throw new IllegalStateException("Only a participant who left may be reactivated.");
+        }
+
+        if (room.getStatus() == InTouchRoomStatus.DRAFT ||
+                room.getStatus() == InTouchRoomStatus.READY) {
+            participant.setStatus(ParticipantStatus.JOINED);
+            participant.setActiveInRoom(false);
+        } else if (room.getStatus() == InTouchRoomStatus.STARTED ||
+                room.getStatus() == InTouchRoomStatus.PAUSED) {
+            if (!groupParticipantRepository.existsByRoomIdAndParticipantId(
+                    roomId,
+                    participantId
+            )) {
+                throw new IllegalStateException(
+                        "Participant must be assigned to a group before reactivation."
+                );
+            }
+            participant.setStatus(ParticipantStatus.ACTIVE);
+            participant.setActiveInRoom(true);
+            if (participant.getActivatedAt() == null) {
+                participant.setActivatedAt(Instant.now());
+            }
+        } else {
+            throw new IllegalStateException("Participant cannot be reactivated in this room.");
+        }
+
+        participantRepository.save(participant);
+        progressPublisher.publishRoomProgress(roomId);
     }
 }

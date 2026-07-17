@@ -43,6 +43,16 @@ public class LiveRoomParticipantValidator {
             return;
         }
 
+        boolean sameUser =
+                participant.getMobileUser() != null
+                        && participant.getMobileUser().getId().equals(currentUserId);
+
+        if (sameUser && participant.getStatus() == ParticipantStatus.LEFT) {
+            throw new IllegalStateException(
+                    "You already left this room. Ask the room owner to reactivate your participation if you want to rejoin."
+            );
+        }
+
     /*
      Case 2:
      The participant slot was already claimed by THIS SAME mobile user.
@@ -56,8 +66,7 @@ public class LiveRoomParticipantValidator {
      - allow rejoin/resume for same user
      - useful when app restarts or reconnects
     */
-        if (participant.getMobileUser() != null
-                && participant.getMobileUser().getId().equals(currentUserId)
+        if (sameUser
                 && (
                 participant.getStatus() == ParticipantStatus.JOINED
                         || participant.getStatus() == ParticipantStatus.ACTIVE

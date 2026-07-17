@@ -98,6 +98,7 @@ private InTouchRoomGroupProgressDto calculateGroupProgress(
                                 participant.getId(),
                                 participant.getDisplayName(), // adjust if your field name differs
                                 participant.getParticipantCode(),
+                                participant.getStatus(),
                                 nextKey != null ? nextKey.getKeyValue() : null,
                                 nextKey != null ? nextKey.getAssignedOrder() : null
                         );

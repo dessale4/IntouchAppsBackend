@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -55,17 +56,46 @@ public class InTouchRoomParticipantService {
             participant.setStatus(ParticipantStatus.JOINED);
             participant.setClaimedAt(Instant.now());
         }
+        MobileJoinRoomResponse response = toMobileJoinRoomResponse(participant);
+        progressPublisher.publishRoomProgress(participant.getRoom().getId());
+        return response;
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<MobileJoinRoomResponse> getCurrentRoom() {
+        Integer currentUserId = securityUtils.getCurrentUserId();
+
+        return participantRepository.findCurrentResumableParticipant(currentUserId)
+                .map(this::toMobileJoinRoomResponse);
+    }
+
+    @Transactional
+    public void leaveCurrentRoom() {
+        Integer currentUserId = securityUtils.getCurrentUserId();
+        InTouchRoomParticipant participant =
+                participantRepository.findCurrentResumableParticipant(currentUserId)
+                        .orElseThrow(() -> new IllegalStateException(
+                                "No current live room participation found."
+                        ));
+
+        participant.setStatus(ParticipantStatus.LEFT);
+        participant.setActiveInRoom(false);
+        participantRepository.save(participant);
+        progressPublisher.publishRoomProgress(participant.getRoom().getId());
+    }
+
+    private MobileJoinRoomResponse toMobileJoinRoomResponse(
+            InTouchRoomParticipant participant
+    ) {
         List<InTouchRoomGroupParticipant> groupAssignments =
                 groupParticipantRepository.findByRoomIdAndParticipantId(
                         participant.getRoom().getId(),
                         participant.getId()
                 );
         boolean canPlay =
-                participant.getRoom().getStatus() == InTouchRoomStatus.STARTED ||
-                        participant.getRoom().getStatus() == InTouchRoomStatus.PAUSED;
+                participant.getRoom().getStatus() == InTouchRoomStatus.STARTED;
         InTouchRoomGroupParticipant groupAssignment =
                 groupAssignments.isEmpty() ? null : groupAssignments.get(0);
-        progressPublisher.publishRoomProgress(participant.getRoom().getId());
         return MobileJoinRoomResponse.builder()
                 .roomId(participant.getRoom().getId())
                 .buildMode(participant.getRoom().getBuildMode())

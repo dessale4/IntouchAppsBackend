@@ -195,4 +195,13 @@ public class InTouchRoomOwnerController {
         ownerCommandService.releaseParticipantClaim(roomId, participantId);
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/{roomId}/participants/{participantId}/reactivate")
+    public ResponseEntity<Void> reactivateParticipant(
+            @PathVariable Long roomId,
+            @PathVariable Long participantId
+    ) {
+        ownerCommandService.reactivateParticipant(roomId, participantId);
+        return ResponseEntity.noContent().build();
+    }
 }

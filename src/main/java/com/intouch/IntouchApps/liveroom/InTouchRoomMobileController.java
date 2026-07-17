@@ -33,6 +33,19 @@ public class InTouchRoomMobileController {
         );
     }
 
+    @GetMapping("/current")
+    public ResponseEntity<MobileJoinRoomResponse> getCurrentRoom() {
+        return participantService.getCurrentRoom()
+                .map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.noContent().build());
+    }
+
+    @PostMapping("/current/leave")
+    public ResponseEntity<Void> leaveCurrentRoom() {
+        participantService.leaveCurrentRoom();
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/keys/{groupLiveKeyId}/place")
     public ResponseEntity<MobileNextKeyResponse> placeKey(
             @PathVariable Long groupLiveKeyId,

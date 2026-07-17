@@ -114,7 +114,7 @@ private void createGroupLiveKeys(
 }
     private void activateParticipants(Long roomId) {
         List<InTouchRoomParticipant> participants =
-                participantRepository.findByRoomIdAndStatusNot(roomId, ParticipantStatus.REMOVED);
+                participantRepository.findByRoomIdAndStatus(roomId, ParticipantStatus.JOINED);
 
         Instant now = Instant.now();
 

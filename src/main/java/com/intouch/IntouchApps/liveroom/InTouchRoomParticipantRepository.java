@@ -11,12 +11,32 @@ import java.util.Optional;
 public interface InTouchRoomParticipantRepository
         extends JpaRepository<InTouchRoomParticipant, Long> {
     @Query("""
+                SELECT p
+                FROM InTouchRoomParticipant p
+                JOIN FETCH p.room r
+                LEFT JOIN FETCH p.mobileUser u
+                WHERE p.mobileUser.id = :userId
+                  AND (
+                        (p.status = 'JOINED'
+                         AND p.activeInRoom = false
+                         AND r.status IN ('DRAFT', 'READY'))
+                     OR (p.status = 'ACTIVE'
+                         AND p.activeInRoom = true
+                         AND r.status IN ('STARTED', 'PAUSED'))
+                  )
+            """)
+    Optional<InTouchRoomParticipant> findCurrentResumableParticipant(
+            @Param("userId") Integer userId
+    );
+
+    @Query("""
                 SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
                 FROM InTouchRoomParticipant p
                 JOIN p.room r
                 WHERE p.mobileUser.id = :userId
-                  AND p.status IN ('JOINED', 'ACTIVE')
-                  AND r.status = 'STARTED'
+                  AND p.status = 'ACTIVE'
+                  AND p.activeInRoom = true
+                  AND r.status IN ('STARTED', 'PAUSED')
             """)
     boolean existsActiveParticipantInActiveRoom(@Param("userId") Integer userId);
 
@@ -61,9 +81,15 @@ public interface InTouchRoomParticipantRepository
                 FROM InTouchRoomParticipant p
                 JOIN p.room r
                 WHERE p.mobileUser.id = :userId
-                  AND p.status IN ('JOINED', 'ACTIVE')
-                  AND r.status = 'STARTED'
                   AND r.id <> :currentRoomId
+                  AND (
+                        (p.status = 'JOINED'
+                         AND p.activeInRoom = false
+                         AND r.status IN ('DRAFT', 'READY'))
+                     OR (p.status = 'ACTIVE'
+                         AND p.activeInRoom = true
+                         AND r.status IN ('STARTED', 'PAUSED'))
+                  )
             """)
     boolean existsActiveParticipantInOtherActiveRoom(
             @Param("userId") Integer userId,
@@ -89,6 +115,10 @@ public interface InTouchRoomParticipantRepository
     List<InTouchRoomParticipant> findByRoomId(Long roomId);
 
     List<InTouchRoomParticipant> findByRoomIdAndStatusNot(Long roomId, ParticipantStatus status);
+
+    List<InTouchRoomParticipant> findByRoomIdAndStatus(Long roomId, ParticipantStatus status);
+
+    long countByRoomIdAndStatus(Long roomId, ParticipantStatus status);
 
     @Query("""
                 SELECT p

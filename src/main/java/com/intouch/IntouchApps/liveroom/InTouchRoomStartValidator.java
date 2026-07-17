@@ -34,7 +34,10 @@ public class InTouchRoomStartValidator {
             throw new IllegalStateException("Room must have at least one group.");
         }
 
-        long participantCount = participantRepository.countByRoomId(roomId);
+        long participantCount = participantRepository.countByRoomIdAndStatus(
+                roomId,
+                ParticipantStatus.JOINED
+        );
         if (participantCount == 0) {
             throw new IllegalStateException("Room must have at least one participant.");
         }
@@ -45,9 +48,9 @@ public class InTouchRoomStartValidator {
         }
 
         long activeParticipantCount =
-                participantRepository.countByRoomIdAndStatusNot(
+                participantRepository.countByRoomIdAndStatus(
                         roomId,
-                        ParticipantStatus.REMOVED
+                        ParticipantStatus.JOINED
                 );
 
         long assignedParticipantCount =
@@ -83,9 +86,10 @@ public class InTouchRoomStartValidator {
 
         for (InTouchRoomGroup group : groups) {
             long groupParticipantCount =
-                    groupParticipantRepository.countByRoomIdAndGroupId(
+                    groupParticipantRepository.countByRoomIdAndGroupIdAndParticipantStatus(
                             room.getId(),
-                            group.getId()
+                            group.getId(),
+                            ParticipantStatus.JOINED
                     );
 
             if (groupParticipantCount > activeKeyCount) {

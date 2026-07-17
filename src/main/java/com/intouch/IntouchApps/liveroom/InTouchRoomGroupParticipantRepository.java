@@ -28,7 +28,7 @@ public interface InTouchRoomGroupParticipantRepository
                 SELECT COUNT(DISTINCT gp.participant.id)
                 FROM InTouchRoomGroupParticipant gp
                 WHERE gp.room.id = :roomId
-                  AND gp.participant.status <> 'REMOVED'
+                  AND gp.participant.status = 'JOINED'
                   AND gp.group.room.id = :roomId
             """)
     long countDistinctAssignedActiveParticipants(@Param("roomId") Long roomId);
@@ -70,6 +70,7 @@ public interface InTouchRoomGroupParticipantRepository
                 SELECT gp.participant
                 FROM InTouchRoomGroupParticipant gp
                 WHERE gp.group.id = :groupId
+                  AND gp.participant.status = 'JOINED'
                 ORDER BY gp.participant.id ASC
             """)
     List<InTouchRoomParticipant> findParticipantsByGroupId(
@@ -109,5 +110,11 @@ public interface InTouchRoomGroupParticipantRepository
     List<InTouchRoomGroupParticipant> findByRoomIdAndGroupId(
             Long roomId,
             Long groupId
+    );
+
+    long countByRoomIdAndGroupIdAndParticipantStatus(
+            Long roomId,
+            Long groupId,
+            ParticipantStatus participantStatus
     );
 }
