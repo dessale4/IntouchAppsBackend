@@ -17,7 +17,30 @@ public class InTouchRoomMobileQueryService {
 
     private final InTouchRoomRepository roomRepository;
     private final InTouchRoomGroupLiveKeyRepository groupLiveKeyRepository;
+    private final InTouchRoomParticipantRepository participantRepository;
+    private final InTouchRoomLifecycleValidator lifecycleValidator;
     private final SecurityUtils securityUtils;
+
+    @Transactional(readOnly = true)
+    public MobileRoomStatusResponse getParticipantRoomStatus(Long roomId) {
+        InTouchRoom room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new IllegalArgumentException("Room not found."));
+        if (Boolean.TRUE.equals(room.getDeleted()) ||
+                room.getStatus() == InTouchRoomStatus.DELETED) {
+            throw new IllegalStateException("Deleted room status is unavailable.");
+        }
+
+        Integer currentUserId = securityUtils.getCurrentUserId();
+        participantRepository.findByRoomIdAndMobileUserId(roomId, currentUserId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "You are not assigned to this live room."
+                ));
+
+        return MobileRoomStatusResponse.builder()
+                .roomId(roomId)
+                .roomStatus(room.getStatus())
+                .build();
+    }
 
     @Transactional(readOnly = true)
     public MobileRoomWorkResponse getMyRoomWork(Long roomId) {
@@ -72,6 +95,30 @@ public class InTouchRoomMobileQueryService {
                     currentUserId
             );
         }
+        return buildBoardResponse(roomId, boardKeys);
+    }
+
+    MobileMyBoardResponse getCompletedReviewBoard(InTouchRoom room) {
+        Integer currentUserId = securityUtils.getCurrentUserId();
+        List<InTouchRoomGroupLiveKey> boardKeys;
+
+        if (room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS) {
+            boardKeys = groupLiveKeyRepository
+                    .findMyRemoveModeBoardKeysForCompletedReview(
+                            room.getId(), currentUserId);
+        } else {
+            boardKeys = groupLiveKeyRepository
+                    .findMyPlacedKeysForCompletedReview(
+                            room.getId(), currentUserId);
+        }
+
+        return buildBoardResponse(room.getId(), boardKeys);
+    }
+
+    private MobileMyBoardResponse buildBoardResponse(
+            Long roomId,
+            List<InTouchRoomGroupLiveKey> boardKeys
+    ) {
         if (boardKeys.isEmpty()) {
             return MobileMyBoardResponse.builder()
                     .roomId(roomId)
@@ -150,23 +197,26 @@ public class InTouchRoomMobileQueryService {
         InTouchRoom room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("Room not found."));
 
-        if (room.getStatus() != InTouchRoomStatus.STARTED &&
-                room.getStatus() != InTouchRoomStatus.PAUSED &&
-                room.getStatus() != InTouchRoomStatus.COMPLETED) {
-            throw new IllegalStateException("Live room has not started.");
-        }
+        lifecycleValidator.ensureGameplayAllowed(room);
 
-        boolean participantExists =
-                groupLiveKeyRepository.existsByRoomIdAndAssignedParticipantMobileUserId(
-                        roomId,
-                        currentUserId
-                );
+        InTouchRoomParticipant participant = participantRepository
+                .findByRoomIdAndMobileUserId(roomId, currentUserId)
+                .orElseThrow(() -> new IllegalStateException(
+                        "You are not assigned to this live room."
+                ));
 
-        if (!participantExists) {
-            throw new IllegalStateException(
-                    "You are not assigned to this live room."
-            );
+        if (participant.getStatus() != ParticipantStatus.ACTIVE ||
+                !Boolean.TRUE.equals(participant.getActiveInRoom())) {
+            throw new IllegalStateException("Participant is not active in this room.");
         }
+        return buildNextKeyResponse(room, currentUserId);
+    }
+
+    MobileNextKeyResponse buildNextKeyResponse(
+            InTouchRoom room,
+            Integer currentUserId
+    ) {
+        Long roomId = room.getId();
         LiveKeyBuildStatus remainingStatus =
                 room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
                         ? LiveKeyBuildStatus.IN_PROGRESS

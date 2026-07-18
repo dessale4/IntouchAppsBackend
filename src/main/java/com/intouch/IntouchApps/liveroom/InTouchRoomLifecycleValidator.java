@@ -84,6 +84,11 @@ public class InTouchRoomLifecycleValidator {
     }
 
     public void ensureGameplayAllowed(InTouchRoom room) {
+        if (Boolean.TRUE.equals(room.getDeleted()) ||
+                room.getStatus() == InTouchRoomStatus.DELETED) {
+            throw new IllegalStateException("Deleted room cannot be used for gameplay.");
+        }
+
         if (room.getStatus() == InTouchRoomStatus.PAUSED) {
             throw new IllegalStateException("Room paused. Please wait for the room owner to resume it.");
         }
@@ -100,15 +105,15 @@ public class InTouchRoomLifecycleValidator {
             InTouchRoom room,
             InTouchRoomParticipant participant
     ) {
-        if (room.getStatus() == InTouchRoomStatus.STARTED) {
-            throw new IllegalStateException(
-                    "Participant claims cannot be released after the room has started."
-            );
+        if (Boolean.TRUE.equals(room.getDeleted()) ||
+                room.getStatus() == InTouchRoomStatus.DELETED) {
+            throw new IllegalStateException("Deleted room cannot release participant claims.");
         }
 
-        if (room.getStatus() == InTouchRoomStatus.COMPLETED) {
+        if (room.getStatus() != InTouchRoomStatus.DRAFT &&
+                room.getStatus() != InTouchRoomStatus.READY) {
             throw new IllegalStateException(
-                    "Reset the room before releasing participant claims."
+                    "Participant claims can be released only in DRAFT or READY rooms."
             );
         }
 

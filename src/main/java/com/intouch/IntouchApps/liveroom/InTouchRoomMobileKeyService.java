@@ -34,7 +34,7 @@ public class InTouchRoomMobileKeyService {
     private final InTouchRoomCompletionService completionService;
     private final InTouchRoomGroupErrorService groupErrorService;
     private final InTouchRoomGroupBoardRowRepository boardRowRepository;
-    private final InTouchRoomMobileQueryService mobileQueryService;
+    private final InTouchRoomPooledKeyClaimService pooledKeyClaimService;
 
     @Transactional
     public MobileNextKeyResponse placeKey(
@@ -154,7 +154,7 @@ public class InTouchRoomMobileKeyService {
 
         publishProgress(room.getId());
 
-        return mobileQueryService.getNextKeyForCurrentParticipant(room.getId());
+        return pooledKeyClaimService.nextKeyAfterSuccessfulWork(room.getId());
     }
 
     @Transactional
@@ -180,8 +180,11 @@ public class InTouchRoomMobileKeyService {
             throw new IllegalStateException("Room is not in REMOVE_KEYS mode.");
         }
 
-        if (targetKey.getStatus() == LiveKeyBuildStatus.REMOVED) {
-            throw new IllegalStateException("This key has already been removed.");
+        if (targetKey.getAssignmentState() != LiveKeyAssignmentState.ASSIGNED ||
+                targetKey.getStatus() != LiveKeyBuildStatus.IN_PROGRESS) {
+            throw new IllegalStateException(
+                    "Only an assigned in-progress key can be removed."
+            );
         }
 
         InTouchRoomGroupLiveKey clickedKey =
@@ -229,7 +232,7 @@ public class InTouchRoomMobileKeyService {
 
         publishProgress(room.getId());
 
-        return mobileQueryService.getNextKeyForCurrentParticipant(room.getId());
+        return pooledKeyClaimService.nextKeyAfterSuccessfulWork(room.getId());
     }
     private void placeByExactTargetPosition(InTouchRoomGroupLiveKey key, Integer requestedRow, Integer requestedColumn) {
         if (requestedRow == null || requestedColumn == null) {
@@ -331,7 +334,8 @@ private InTouchRoomGroupLiveKey findKeyForCurrentParticipant(
         );
     }
 
-    if (participant.getStatus() != ParticipantStatus.ACTIVE) {
+    if (participant.getStatus() != ParticipantStatus.ACTIVE ||
+            !Boolean.TRUE.equals(participant.getActiveInRoom())) {
         throw new IllegalStateException(
                 "Participant is not active in this room."
         );

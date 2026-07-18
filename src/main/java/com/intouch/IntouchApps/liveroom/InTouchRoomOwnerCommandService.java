@@ -620,7 +620,7 @@ public class InTouchRoomOwnerCommandService {
         }
 
         InTouchRoomParticipant participant =
-                participantRepository.findByIdAndRoomId(participantId, roomId)
+                participantRepository.findByIdAndRoomIdForUpdate(participantId, roomId)
                         .orElseThrow(() -> new IllegalArgumentException("Participant not found."));
 
         if (participant.getStatus() != ParticipantStatus.LEFT) {

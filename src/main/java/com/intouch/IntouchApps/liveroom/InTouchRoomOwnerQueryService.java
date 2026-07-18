@@ -385,6 +385,33 @@ public class InTouchRoomOwnerQueryService {
                                     groupByParticipantId.get(participant.getId());
 
                             User mobileUser = participant.getMobileUser();
+                            int releasableUnfinishedKeyCount = 0;
+                            int releasedToPoolKeyCount = 0;
+
+                            if (group != null) {
+                                LiveKeyBuildStatus unfinishedStatus =
+                                        room.getBuildMode() == LiveRoomBuildMode.REMOVE_KEYS
+                                                ? LiveKeyBuildStatus.IN_PROGRESS
+                                                : LiveKeyBuildStatus.NOT_STARTED;
+                                releasableUnfinishedKeyCount = Math.toIntExact(
+                                        groupLiveKeyRepository
+                                                .countByRoomIdAndGroupIdAndAssignedParticipantIdAndAssignmentStateAndStatus(
+                                                        roomId,
+                                                        group.getId(),
+                                                        participant.getId(),
+                                                        LiveKeyAssignmentState.ASSIGNED,
+                                                        unfinishedStatus
+                                                )
+                                );
+                                releasedToPoolKeyCount = Math.toIntExact(
+                                        groupLiveKeyRepository
+                                                .countByRoomIdAndGroupIdAndReleasedFromParticipantId(
+                                                        roomId,
+                                                        group.getId(),
+                                                        participant.getId()
+                                                )
+                                );
+                            }
 
                             return LiveRoomParticipantAccessRowResponse.builder()
                                     .participantId(participant.getId())
@@ -396,6 +423,8 @@ public class InTouchRoomOwnerQueryService {
                                     .mobileUserId(mobileUser == null ? null : mobileUser.getId())
                                     .mobileUsername(mobileUser == null ? null : mobileUser.getUserName())
                                     .claimedAt(participant.getClaimedAt())
+                                    .releasableUnfinishedKeyCount(releasableUnfinishedKeyCount)
+                                    .releasedToPoolKeyCount(releasedToPoolKeyCount)
                                     .build();
                         })
                         .toList();

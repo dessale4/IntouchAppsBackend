@@ -5,9 +5,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface InTouchRoomRepository extends JpaRepository<InTouchRoom, Long> {
     boolean existsByRoomCode(String roomCode);
+    Optional<InTouchRoom> findByRoomCode(String roomCode);
     List<InTouchRoom> findByOwnerIdAndDeletedFalseOrderByCreatedAtDesc(Integer ownerId);
 
     boolean existsByOwnerIdAndTitleIgnoreCaseAndDeletedFalse(
@@ -27,5 +29,4 @@ public interface InTouchRoomRepository extends JpaRepository<InTouchRoom, Long> 
             @Param("roomCode") String roomCode
     );
 }
-
 

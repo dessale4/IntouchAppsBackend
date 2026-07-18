@@ -20,6 +20,7 @@ public class InTouchRoomOwnerController {
     private final InTouchRoomMapper mapper;
     private final InTouchRoomProgressService progressService;
     private  final InTouchRoomOwnerQueryService ownerQueryService;
+    private final InTouchRoomKeyPoolService keyPoolService;
     @PostMapping
     public ResponseEntity<LiveRoomResponse> createRoom(
             @Valid @RequestBody CreateRoomRequest request
@@ -203,5 +204,15 @@ public class InTouchRoomOwnerController {
     ) {
         ownerCommandService.reactivateParticipant(roomId, participantId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{roomId}/participants/{participantId}/release-unfinished-keys")
+    public ResponseEntity<ReleaseUnfinishedKeysResponse> releaseUnfinishedKeys(
+            @PathVariable Long roomId,
+            @PathVariable Long participantId
+    ) {
+        return ResponseEntity.ok(
+                keyPoolService.releaseUnfinishedKeys(roomId, participantId)
+        );
     }
 }

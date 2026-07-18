@@ -22,4 +22,6 @@ public class LiveRoomParticipantAccessRowResponse {
     private Integer mobileUserId;
     private String mobileUsername;
     private Instant claimedAt;
+    private Integer releasableUnfinishedKeyCount;
+    private Integer releasedToPoolKeyCount;
 }

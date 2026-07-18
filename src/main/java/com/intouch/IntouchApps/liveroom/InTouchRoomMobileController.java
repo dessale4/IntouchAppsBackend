@@ -4,9 +4,11 @@ import com.intouch.IntouchApps.liveroom.dto.JoinRoomRequest;
 import com.intouch.IntouchApps.liveroom.dto.request.MobilePlaceKeyRequest;
 import com.intouch.IntouchApps.liveroom.dto.request.MobileRemoveKeyRequest;
 import com.intouch.IntouchApps.liveroom.dto.response.MobileJoinRoomResponse;
+import com.intouch.IntouchApps.liveroom.dto.response.MobileCompletedRoomReviewResponse;
 import com.intouch.IntouchApps.liveroom.dto.response.MobileMyBoardResponse;
 import com.intouch.IntouchApps.liveroom.dto.response.MobileNextKeyResponse;
 import com.intouch.IntouchApps.liveroom.dto.response.MobileRoomWorkResponse;
+import com.intouch.IntouchApps.liveroom.dto.response.MobileRoomStatusResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,8 @@ public class InTouchRoomMobileController {
     private final InTouchRoomParticipantService participantService;
     private final InTouchRoomMobileKeyService mobileKeyService;
     private final InTouchRoomMobileQueryService mobileQueryService;
+    private final InTouchRoomPooledKeyClaimService pooledKeyClaimService;
+    private final InTouchRoomCompletedReviewService completedReviewService;
 
     @PostMapping("/join")
     public ResponseEntity<MobileJoinRoomResponse> joinRoom(
@@ -86,5 +90,26 @@ public class InTouchRoomMobileController {
             @PathVariable Long roomId
     ) {
         return ResponseEntity.ok(mobileQueryService.getNextKeyForCurrentParticipant(roomId));
+    }
+
+    @PostMapping("/{roomId}/next-key/claim")
+    public ResponseEntity<MobileNextKeyResponse> claimNextKey(
+            @PathVariable Long roomId
+    ) {
+        return ResponseEntity.ok(pooledKeyClaimService.claimNextKey(roomId));
+    }
+
+    @GetMapping("/completed-review/{roomCode}")
+    public ResponseEntity<MobileCompletedRoomReviewResponse> getCompletedReview(
+            @PathVariable String roomCode
+    ) {
+        return ResponseEntity.ok(completedReviewService.getCompletedReview(roomCode));
+    }
+
+    @GetMapping("/{roomId}/participant-status")
+    public ResponseEntity<MobileRoomStatusResponse> getParticipantRoomStatus(
+            @PathVariable Long roomId
+    ) {
+        return ResponseEntity.ok(mobileQueryService.getParticipantRoomStatus(roomId));
     }
 }

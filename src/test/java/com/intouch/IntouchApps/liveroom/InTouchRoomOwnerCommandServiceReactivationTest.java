@@ -33,7 +33,7 @@ class InTouchRoomOwnerCommandServiceReactivationTest {
         assertThat(fixture.participant().getClaimedAt()).isEqualTo(claimedAt);
         assertThat(fixture.participant().getParticipantCode()).isEqualTo("1234");
         assertThat(fixture.participant().getDisplayName()).isEqualTo("Participant");
-        assertThat(fixture.repositoryCalls()).containsExactly("findByIdAndRoomId", "save");
+        assertThat(fixture.repositoryCalls()).containsExactly("findByIdAndRoomIdForUpdate", "save");
         assertThat(fixture.publishedRoomIds()).containsExactly(ROOM_ID);
     }
 
@@ -179,7 +179,7 @@ class InTouchRoomOwnerCommandServiceReactivationTest {
                 InTouchRoomParticipantRepository.class,
                 (name, args) -> {
                     calls.add(name);
-                    if (name.equals("findByIdAndRoomId")) {
+                    if (name.equals("findByIdAndRoomIdForUpdate")) {
                         return participantFound ? Optional.of(participant) : Optional.empty();
                     }
                     if (name.equals("save")) return args[0];

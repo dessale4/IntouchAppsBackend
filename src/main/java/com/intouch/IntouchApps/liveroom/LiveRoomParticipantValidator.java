@@ -22,6 +22,62 @@ public class LiveRoomParticipantValidator {
             );
         }
     }
+
+    public void ensureRoomAllowsJoin(
+            InTouchRoomParticipant participant,
+            Integer currentUserId
+    ) {
+        InTouchRoom room = participant.getRoom();
+        boolean sameUser = participant.getMobileUser() != null
+                && participant.getMobileUser().getId().equals(currentUserId);
+
+        // Keep LEFT handling in ensureSlotClaimable so the user receives the
+        // existing owner-reactivation guidance in every room lifecycle state.
+        if (sameUser && participant.getStatus() == ParticipantStatus.LEFT) {
+            return;
+        }
+
+        if (Boolean.TRUE.equals(room.getDeleted()) ||
+                room.getStatus() == InTouchRoomStatus.DELETED) {
+            throw new IllegalStateException("Deleted room cannot be joined.");
+        }
+
+        if (room.getStatus() == InTouchRoomStatus.COMPLETED ||
+                room.getStatus() == InTouchRoomStatus.CANCELLED) {
+            throw new IllegalStateException("Completed or cancelled room cannot be joined.");
+        }
+
+        if (participant.getStatus() == ParticipantStatus.INVITED &&
+                participant.getMobileUser() == null) {
+            if (room.getStatus() != InTouchRoomStatus.DRAFT &&
+                    room.getStatus() != InTouchRoomStatus.READY) {
+                throw new IllegalStateException(
+                        "New participants can join only DRAFT or READY rooms."
+                );
+            }
+            return;
+        }
+
+        if (sameUser && participant.getStatus() == ParticipantStatus.JOINED) {
+            if (room.getStatus() != InTouchRoomStatus.DRAFT &&
+                    room.getStatus() != InTouchRoomStatus.READY) {
+                throw new IllegalStateException(
+                        "Joined participants can re-enter only DRAFT or READY rooms."
+                );
+            }
+            return;
+        }
+
+        if (sameUser && participant.getStatus() == ParticipantStatus.ACTIVE) {
+            if (room.getStatus() != InTouchRoomStatus.STARTED &&
+                    room.getStatus() != InTouchRoomStatus.PAUSED) {
+                throw new IllegalStateException(
+                        "Active participants can re-enter only STARTED or PAUSED rooms."
+                );
+            }
+        }
+    }
+
     public void ensureSlotClaimable(
             InTouchRoomParticipant participant,
             Integer currentUserId

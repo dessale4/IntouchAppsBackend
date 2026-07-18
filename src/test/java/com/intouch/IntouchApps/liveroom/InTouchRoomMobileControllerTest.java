@@ -21,7 +21,7 @@ class InTouchRoomMobileControllerTest {
                     }
                 };
         InTouchRoomMobileController controller =
-                new InTouchRoomMobileController(participantService, null, null);
+                new InTouchRoomMobileController(participantService, null, null, null, null);
 
         ResponseEntity<?> response = controller.getCurrentRoom();
 
@@ -40,7 +40,7 @@ class InTouchRoomMobileControllerTest {
                     }
                 };
         InTouchRoomMobileController controller =
-                new InTouchRoomMobileController(participantService, null, null);
+                new InTouchRoomMobileController(participantService, null, null, null, null);
 
         ResponseEntity<?> response = controller.leaveCurrentRoom();
 

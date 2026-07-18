@@ -34,6 +34,7 @@ public class InTouchRoomParticipantService {
                         ));
 
         validator.ensureUserCanJoin(currentUserId, participant.getRoom().getId());
+        validator.ensureRoomAllowsJoin(participant, currentUserId);
         boolean alreadyJoinedThisRoom =
                 participantRepository.existsByRoomIdAndMobileUserIdAndClaimedAtIsNotNull(
                         participant.getRoom().getId(),

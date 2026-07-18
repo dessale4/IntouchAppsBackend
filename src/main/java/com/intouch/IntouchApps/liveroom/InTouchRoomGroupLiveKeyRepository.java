@@ -1,6 +1,8 @@
 package com.intouch.IntouchApps.liveroom;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -116,6 +118,21 @@ public interface InTouchRoomGroupLiveKeyRepository
                 ORDER BY k.currentRow ASC, k.currentColumn ASC
             """)
     List<InTouchRoomGroupLiveKey> findMyPlacedKeysForBoard(
+            @Param("roomId") Long roomId,
+            @Param("currentUserId") Integer currentUserId
+    );
+
+    @Query("""
+                SELECT k
+                FROM InTouchRoomGroupLiveKey k
+                JOIN k.assignedParticipant p
+                JOIN p.mobileUser u
+                WHERE k.room.id = :roomId
+                  AND u.id = :currentUserId
+                  AND k.status = 'PLACED'
+                ORDER BY k.currentRow ASC, k.currentColumn ASC
+            """)
+    List<InTouchRoomGroupLiveKey> findMyPlacedKeysForCompletedReview(
             @Param("roomId") Long roomId,
             @Param("currentUserId") Integer currentUserId
     );
@@ -324,6 +341,29 @@ public interface InTouchRoomGroupLiveKeyRepository
             @Param("roomId") Long roomId,
             @Param("currentUserId") Integer currentUserId
     );
+
+    @Query("""
+                SELECT k
+                FROM InTouchRoomGroupLiveKey k
+                JOIN k.group g
+                JOIN InTouchRoomGroupParticipant gp
+                     ON gp.group.id = g.id
+                JOIN gp.participant p
+                JOIN p.mobileUser u
+                WHERE k.room.id = :roomId
+                  AND u.id = :currentUserId
+                  AND (
+                        k.removedByParticipant IS NULL
+                        OR k.removedByParticipant.id <> p.id
+                      )
+                  AND k.currentRow IS NOT NULL
+                  AND k.currentColumn IS NOT NULL
+                ORDER BY k.currentRow ASC, k.currentColumn ASC
+            """)
+    List<InTouchRoomGroupLiveKey> findMyRemoveModeBoardKeysForCompletedReview(
+            @Param("roomId") Long roomId,
+            @Param("currentUserId") Integer currentUserId
+    );
     @Query("""
         SELECT k
         FROM InTouchRoomGroupLiveKey k
@@ -338,5 +378,65 @@ public interface InTouchRoomGroupLiveKeyRepository
             @Param("groupId") Long groupId,
             @Param("participantId") Long participantId,
             @Param("status") LiveKeyBuildStatus status
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT k
+            FROM InTouchRoomGroupLiveKey k
+            WHERE k.room.id = :roomId
+              AND k.group.id = :groupId
+              AND k.assignedParticipant.id = :participantId
+              AND k.assignmentState = :assignmentState
+              AND k.status = :status
+            ORDER BY k.assignedOrder ASC
+            """)
+    List<InTouchRoomGroupLiveKey> findReleasableKeysForUpdate(
+            @Param("roomId") Long roomId,
+            @Param("groupId") Long groupId,
+            @Param("participantId") Long participantId,
+            @Param("assignmentState") LiveKeyAssignmentState assignmentState,
+            @Param("status") LiveKeyBuildStatus status
+    );
+
+    Optional<InTouchRoomGroupLiveKey>
+    findFirstByRoom_IdAndGroup_IdAndAssignedParticipant_IdAndAssignmentStateAndStatusOrderByAssignedOrderAscIdAsc(
+            Long roomId,
+            Long groupId,
+            Long participantId,
+            LiveKeyAssignmentState assignmentState,
+            LiveKeyBuildStatus status
+    );
+
+    @Query(value = """
+            SELECT *
+            FROM intouch_room_group_live_key_tbl
+            WHERE room_id = :roomId
+              AND group_id = :groupId
+              AND assignment_state = 'POOLED'
+              AND assigned_participant_id IS NULL
+              AND status = :status
+            ORDER BY assigned_order ASC, id ASC
+            FOR UPDATE SKIP LOCKED
+            LIMIT 1
+            """, nativeQuery = true)
+    Optional<InTouchRoomGroupLiveKey> findNextPooledKeyForUpdate(
+            @Param("roomId") Long roomId,
+            @Param("groupId") Long groupId,
+            @Param("status") String status
+    );
+
+    long countByRoomIdAndGroupIdAndAssignedParticipantIdAndAssignmentStateAndStatus(
+            Long roomId,
+            Long groupId,
+            Long participantId,
+            LiveKeyAssignmentState assignmentState,
+            LiveKeyBuildStatus status
+    );
+
+    long countByRoomIdAndGroupIdAndReleasedFromParticipantId(
+            Long roomId,
+            Long groupId,
+            Long releasedFromParticipantId
     );
 }

@@ -1,5 +1,7 @@
 package com.intouch.IntouchApps.liveroom;
 
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -160,4 +162,33 @@ public interface InTouchRoomParticipantRepository
             Integer mobileUserId
     );
     Optional<InTouchRoomParticipant> findByIdAndRoomId(Long id, Long roomId);
+
+    Optional<InTouchRoomParticipant> findByRoomIdAndMobileUserId(
+            Long roomId,
+            Integer mobileUserId
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT p
+            FROM InTouchRoomParticipant p
+            WHERE p.id = :participantId
+              AND p.room.id = :roomId
+            """)
+    Optional<InTouchRoomParticipant> findByIdAndRoomIdForUpdate(
+            @Param("participantId") Long participantId,
+            @Param("roomId") Long roomId
+    );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+            SELECT p
+            FROM InTouchRoomParticipant p
+            WHERE p.room.id = :roomId
+              AND p.mobileUser.id = :userId
+            """)
+    Optional<InTouchRoomParticipant> findByRoomIdAndMobileUserIdForUpdate(
+            @Param("roomId") Long roomId,
+            @Param("userId") Integer userId
+    );
 }

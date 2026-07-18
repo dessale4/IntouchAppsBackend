@@ -48,6 +48,18 @@ public class InTouchRoomGroupLiveKey extends BaseEntity {
     @JoinColumn(name = "assigned_participant_id")
     private InTouchRoomParticipant assignedParticipant;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "assignment_state", nullable = false, length = 30)
+    private LiveKeyAssignmentState assignmentState = LiveKeyAssignmentState.ASSIGNED;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "released_from_participant_id")
+    private InTouchRoomParticipant releasedFromParticipant;
+
+    @Column(name = "pooled_at")
+    private Instant pooledAt;
+
     @Column(name = "key_value", nullable = false, length = 30)
     private String keyValue;
 
