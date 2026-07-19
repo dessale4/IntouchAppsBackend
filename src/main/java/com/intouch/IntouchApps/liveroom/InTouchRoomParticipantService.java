@@ -4,6 +4,7 @@ import com.intouch.IntouchApps.liveroom.dto.response.MobileJoinRoomResponse;
 import com.intouch.IntouchApps.security.SecurityUtils;
 import com.intouch.IntouchApps.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,7 +14,11 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InTouchRoomParticipantService {
+
+    private static final String MULTIPLE_CURRENT_ROOMS_MESSAGE =
+            "Multiple current live-room participations found. Please contact support.";
 
     private final InTouchRoomParticipantRepository participantRepository;
     private final InTouchRoomRepository roomRepository;
@@ -66,7 +71,7 @@ public class InTouchRoomParticipantService {
     public Optional<MobileJoinRoomResponse> getCurrentRoom() {
         Integer currentUserId = securityUtils.getCurrentUserId();
 
-        return participantRepository.findCurrentResumableParticipant(currentUserId)
+        return resolveCurrentParticipant(currentUserId)
                 .map(this::toMobileJoinRoomResponse);
     }
 
@@ -74,7 +79,7 @@ public class InTouchRoomParticipantService {
     public void leaveCurrentRoom() {
         Integer currentUserId = securityUtils.getCurrentUserId();
         InTouchRoomParticipant participant =
-                participantRepository.findCurrentResumableParticipant(currentUserId)
+                resolveCurrentParticipant(currentUserId)
                         .orElseThrow(() -> new IllegalStateException(
                                 "No current live room participation found."
                         ));
@@ -83,6 +88,25 @@ public class InTouchRoomParticipantService {
         participant.setActiveInRoom(false);
         participantRepository.save(participant);
         progressPublisher.publishRoomProgress(participant.getRoom().getId());
+    }
+
+    private Optional<InTouchRoomParticipant> resolveCurrentParticipant(Integer userId) {
+        List<InTouchRoomParticipant> matches =
+                participantRepository.findCurrentResumableParticipants(userId);
+
+        if (matches.size() > 1) {
+            log.error(
+                    "Multiple current live-room participations for userId={}: {}",
+                    userId,
+                    matches.stream()
+                            .map(participant -> "participantId=" + participant.getId()
+                                    + ", roomId=" + participant.getRoom().getId())
+                            .toList()
+            );
+            throw new IllegalStateException(MULTIPLE_CURRENT_ROOMS_MESSAGE);
+        }
+
+        return matches.stream().findFirst();
     }
 
     private MobileJoinRoomResponse toMobileJoinRoomResponse(

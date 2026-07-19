@@ -627,6 +627,16 @@ public class InTouchRoomOwnerCommandService {
             throw new IllegalStateException("Only a participant who left may be reactivated.");
         }
 
+        if (participant.getMobileUser() != null &&
+                participantRepository.existsOtherCurrentParticipation(
+                        participant.getMobileUser().getId(),
+                        participant.getId()
+                )) {
+            throw new IllegalStateException(
+                    "This participant is currently active in another room. Wait until they leave or complete that room, or release their unfinished keys to this group’s shared pool."
+            );
+        }
+
         if (room.getStatus() == InTouchRoomStatus.DRAFT ||
                 room.getStatus() == InTouchRoomStatus.READY) {
             participant.setStatus(ParticipantStatus.JOINED);

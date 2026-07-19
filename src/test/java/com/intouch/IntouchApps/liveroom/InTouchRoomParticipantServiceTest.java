@@ -114,14 +114,14 @@ class InTouchRoomParticipantServiceTest {
 
     @Test
     void leaveWithoutCurrentAssociationReturnsBusinessError() {
-        LeaveHarness harness = leaveHarness(Optional.empty());
+        LeaveHarness harness = leaveHarness(List.of());
 
         org.assertj.core.api.Assertions.assertThatThrownBy(harness.service()::leaveCurrentRoom)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("No current live room participation found.");
 
         assertThat(harness.repositoryCalls())
-                .containsExactly("findCurrentResumableParticipant");
+                .containsExactly("findCurrentResumableParticipants");
         assertThat(harness.publishedRoomIds()).isEmpty();
     }
 
@@ -141,7 +141,7 @@ class InTouchRoomParticipantServiceTest {
         String displayName = participant.getDisplayName();
         InTouchRoom room = participant.getRoom();
 
-        LeaveHarness harness = leaveHarness(Optional.of(participant));
+        LeaveHarness harness = leaveHarness(List.of(participant));
 
         harness.service().leaveCurrentRoom();
 
@@ -155,22 +155,22 @@ class InTouchRoomParticipantServiceTest {
         assertThat(participant.getRoom()).isSameAs(room);
         assertThat(room.getStatus()).isEqualTo(roomStatus);
         assertThat(harness.repositoryCalls())
-                .containsExactly("findCurrentResumableParticipant", "save");
+                .containsExactly("findCurrentResumableParticipants", "save");
         assertThat(harness.publishedRoomIds()).containsExactly(10L);
     }
 
-    private LeaveHarness leaveHarness(Optional<InTouchRoomParticipant> result) {
+    private LeaveHarness leaveHarness(List<InTouchRoomParticipant> result) {
         List<String> repositoryCalls = new ArrayList<>();
         InTouchRoomParticipantRepository participantRepository = proxy(
                 InTouchRoomParticipantRepository.class,
                 (methodName, args) -> {
                     repositoryCalls.add(methodName);
-                    if (methodName.equals("findCurrentResumableParticipant")) {
+                    if (methodName.equals("findCurrentResumableParticipants")) {
                         assertThat(args).containsExactly(USER_ID);
                         return result;
                     }
                     if (methodName.equals("save")) {
-                        assertThat(args).containsExactly(result.orElseThrow());
+                        assertThat(args).containsExactly(result.get(0));
                         return args[0];
                     }
                     throw new AssertionError("Unexpected repository operation: " + methodName);
@@ -198,18 +198,18 @@ class InTouchRoomParticipantServiceTest {
     }
 
     private InTouchRoomParticipantService serviceReturning(InTouchRoomParticipant participant) {
-        return service(Optional.of(participant));
+        return service(List.of(participant));
     }
 
     private InTouchRoomParticipantService serviceReturningNoAssociation() {
-        return service(Optional.empty());
+        return service(List.of());
     }
 
-    private InTouchRoomParticipantService service(Optional<InTouchRoomParticipant> result) {
+    private InTouchRoomParticipantService service(List<InTouchRoomParticipant> result) {
         InTouchRoomParticipantRepository participantRepository = proxy(
                 InTouchRoomParticipantRepository.class,
                 (methodName, args) -> {
-                    if (methodName.equals("findCurrentResumableParticipant")) {
+                    if (methodName.equals("findCurrentResumableParticipants")) {
                         assertThat(args).containsExactly(USER_ID);
                         return result;
                     }
@@ -234,6 +234,22 @@ class InTouchRoomParticipantServiceTest {
                 groupParticipantRepository,
                 null
         );
+    }
+
+    @Test
+    void duplicateCurrentAssociationsReturnControlledConflict() {
+        InTouchRoomParticipant first = participant(
+                ParticipantStatus.ACTIVE, true, InTouchRoomStatus.STARTED);
+        InTouchRoomParticipant second = participant(
+                ParticipantStatus.JOINED, false, InTouchRoomStatus.READY);
+        second.setId(21L);
+        second.getRoom().setId(11L);
+
+        assertThatThrownBy(() -> service(List.of(first, second)).getCurrentRoom())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage(
+                        "Multiple current live-room participations found. Please contact support."
+                );
     }
 
     private SecurityUtils securityUtils() {

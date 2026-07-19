@@ -27,8 +27,28 @@ public interface InTouchRoomParticipantRepository
                          AND r.status IN ('STARTED', 'PAUSED'))
                   )
             """)
-    Optional<InTouchRoomParticipant> findCurrentResumableParticipant(
+    List<InTouchRoomParticipant> findCurrentResumableParticipants(
             @Param("userId") Integer userId
+    );
+
+    @Query("""
+                SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END
+                FROM InTouchRoomParticipant p
+                JOIN p.room r
+                WHERE p.mobileUser.id = :userId
+                  AND p.id <> :excludedParticipantId
+                  AND (
+                        (p.status = 'JOINED'
+                         AND p.activeInRoom = false
+                         AND r.status IN ('DRAFT', 'READY'))
+                     OR (p.status = 'ACTIVE'
+                         AND p.activeInRoom = true
+                         AND r.status IN ('STARTED', 'PAUSED'))
+                  )
+            """)
+    boolean existsOtherCurrentParticipation(
+            @Param("userId") Integer userId,
+            @Param("excludedParticipantId") Long excludedParticipantId
     );
 
     @Query("""

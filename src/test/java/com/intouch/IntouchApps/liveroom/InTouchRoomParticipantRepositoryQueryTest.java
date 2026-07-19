@@ -10,7 +10,7 @@ class InTouchRoomParticipantRepositoryQueryTest {
     @Test
     void currentRoomQueryContainsOnlyTheResumableLifecycleCombinations() throws Exception {
         Query query = InTouchRoomParticipantRepository.class
-                .getMethod("findCurrentResumableParticipant", Integer.class)
+                .getMethod("findCurrentResumableParticipants", Integer.class)
                 .getAnnotation(Query.class);
 
         assertThat(query).isNotNull();
@@ -27,6 +27,31 @@ class InTouchRoomParticipantRepositoryQueryTest {
                 .doesNotContain("'COMPLETED'")
                 .doesNotContain("'CANCELLED'")
                 .doesNotContain("'DELETED'");
+    }
+
+    @Test
+    void reactivationConflictQueryUsesCurrentLifecycleAndExcludesSelectedRow()
+            throws Exception {
+        Query query = InTouchRoomParticipantRepository.class
+                .getMethod(
+                        "existsOtherCurrentParticipation",
+                        Integer.class,
+                        Long.class
+                )
+                .getAnnotation(Query.class);
+
+        assertThat(query).isNotNull();
+        assertThat(query.value())
+                .contains("p.mobileUser.id = :userId")
+                .contains("p.id <> :excludedParticipantId")
+                .contains("p.status = 'JOINED'")
+                .contains("p.activeInRoom = false")
+                .contains("r.status IN ('DRAFT', 'READY')")
+                .contains("p.status = 'ACTIVE'")
+                .contains("p.activeInRoom = true")
+                .contains("r.status IN ('STARTED', 'PAUSED')")
+                .doesNotContain("'COMPLETED'")
+                .doesNotContain("'CANCELLED'");
     }
 
     @Test

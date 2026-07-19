@@ -33,7 +33,8 @@ class InTouchRoomOwnerCommandServiceReactivationTest {
         assertThat(fixture.participant().getClaimedAt()).isEqualTo(claimedAt);
         assertThat(fixture.participant().getParticipantCode()).isEqualTo("1234");
         assertThat(fixture.participant().getDisplayName()).isEqualTo("Participant");
-        assertThat(fixture.repositoryCalls()).containsExactly("findByIdAndRoomIdForUpdate", "save");
+        assertThat(fixture.repositoryCalls()).containsExactly(
+                "findByIdAndRoomIdForUpdate", "existsOtherCurrentParticipation", "save");
         assertThat(fixture.publishedRoomIds()).containsExactly(ROOM_ID);
     }
 
@@ -147,6 +148,54 @@ class InTouchRoomOwnerCommandServiceReactivationTest {
         assertThat(fixture.repositoryCalls()).isEmpty();
     }
 
+    @Test
+    void activeParticipationInAnotherRoomRejectsReactivationAndPreservesState() {
+        Fixture fixture = fixture(
+                InTouchRoomStatus.STARTED,
+                ParticipantStatus.LEFT,
+                OWNER_ID,
+                true,
+                true,
+                true
+        );
+
+        assertThatThrownBy(() -> fixture.service().reactivateParticipant(ROOM_ID, PARTICIPANT_ID))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage(
+                        "This participant is currently active in another room. Wait until they leave or complete that room, or release their unfinished keys to this group’s shared pool."
+                );
+        assertThat(fixture.participant().getStatus()).isEqualTo(ParticipantStatus.LEFT);
+        assertThat(fixture.participant().getActiveInRoom()).isFalse();
+        assertThat(fixture.publishedRoomIds()).isEmpty();
+        assertThat(fixture.repositoryCalls()).containsExactly(
+                "findByIdAndRoomIdForUpdate", "existsOtherCurrentParticipation");
+    }
+
+    @Test
+    void joinedWaitingParticipationInAnotherRoomRejectsReactivation() {
+        Fixture fixture = fixture(
+                InTouchRoomStatus.READY,
+                ParticipantStatus.LEFT,
+                OWNER_ID,
+                true,
+                false,
+                true
+        );
+
+        assertThatThrownBy(() -> fixture.service().reactivateParticipant(ROOM_ID, PARTICIPANT_ID))
+                .hasMessageContaining("currently active in another room");
+        assertThat(fixture.participant().getStatus()).isEqualTo(ParticipantStatus.LEFT);
+    }
+
+    @Test
+    void terminalParticipationInAnotherRoomDoesNotBlockReactivation() {
+        Fixture fixture = fixture(InTouchRoomStatus.READY, ParticipantStatus.LEFT, OWNER_ID, true);
+
+        fixture.service().reactivateParticipant(ROOM_ID, PARTICIPANT_ID);
+
+        assertThat(fixture.participant().getStatus()).isEqualTo(ParticipantStatus.JOINED);
+    }
+
     private Fixture fixture(
             InTouchRoomStatus roomStatus,
             ParticipantStatus participantStatus,
@@ -162,6 +211,24 @@ class InTouchRoomOwnerCommandServiceReactivationTest {
             Integer currentUserId,
             boolean participantFound,
             boolean groupAssignmentExists
+    ) {
+        return fixture(
+                roomStatus,
+                participantStatus,
+                currentUserId,
+                participantFound,
+                groupAssignmentExists,
+                false
+        );
+    }
+
+    private Fixture fixture(
+            InTouchRoomStatus roomStatus,
+            ParticipantStatus participantStatus,
+            Integer currentUserId,
+            boolean participantFound,
+            boolean groupAssignmentExists,
+            boolean otherCurrentParticipation
     ) {
         User owner = User.builder().id(OWNER_ID).build();
         InTouchRoom room = InTouchRoom.builder()
@@ -181,6 +248,10 @@ class InTouchRoomOwnerCommandServiceReactivationTest {
                     calls.add(name);
                     if (name.equals("findByIdAndRoomIdForUpdate")) {
                         return participantFound ? Optional.of(participant) : Optional.empty();
+                    }
+                    if (name.equals("existsOtherCurrentParticipation")) {
+                        assertThat(args).containsExactly(7, PARTICIPANT_ID);
+                        return otherCurrentParticipation;
                     }
                     if (name.equals("save")) return args[0];
                     return unexpected(name);
